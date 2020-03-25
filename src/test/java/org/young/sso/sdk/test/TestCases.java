@@ -1,4 +1,4 @@
-package com.gouuse.edpglobal.sso;
+package org.young.sso.sdk.test;
 
 import org.junit.Test;
 import org.young.sso.sdk.utils.DomainUtil;
