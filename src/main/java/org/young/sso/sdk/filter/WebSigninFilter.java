@@ -20,8 +20,8 @@ import org.young.sso.sdk.listener.DefaultSsoListener;
 import org.young.sso.sdk.listener.MemorySessionShared;
 import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.listener.SsoListener;
-import org.young.sso.sdk.resource.EdpResult;
-import org.young.sso.sdk.resource.EdpResult.ResultCode;
+import org.young.sso.sdk.resource.SsoResult;
+import org.young.sso.sdk.resource.SsoResult.ResultCode;
 import org.young.sso.sdk.utils.CookieUtil;
 import org.young.sso.sdk.utils.SsoUtil;
 
@@ -92,48 +92,34 @@ public class WebSigninFilter implements Filter {
 		res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
 		res.setHeader("Access-Control-Allow-Headers", "*");
 
-		LOGGER.info("method:{}, port:{}, url:{}, tenant={}, t={}", 
-				req.getMethod(), req.getServerPort(), req.getRequestURL(),
-				req.getParameter("tenant"), req.getParameter(ConstSso.LOGIN_TOKEN_KEY));
+		LOGGER.info("== method:{}", req.getMethod());
+		LOGGER.info("== port:{}", req.getServerPort());
+		LOGGER.info("== url:{}", req.getRequestURL());
+		LOGGER.info("== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
+		LOGGER.info("== st:{}", req.getParameter(ConstSso.LOGIN_ST_KEY));
 		
 		this.setBasePath(req);
 		String url = req.getRequestURI();
 		
 		// 登录系统重定向过来的请求
-		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_TOKEN_KEY));
+		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_ST_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever());
 		if (isWebappLogin) {
-			String tenant = req.getParameter("tenant");
-			if (tenant!=null) {
-				tenant = String.format("?tenant=%s&", tenant);
-				url = url.contains("?")?url.replaceFirst("?", tenant):url+tenant.substring(0, tenant.length()-1);
-			}
-			
-			LOGGER.debug("===== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
-			LOGGER.debug("===== _t_:{}", req.getParameter(ConstSso.LOGIN_TOKEN_KEY));
+						
 			if (isLogined(req, res)) {
 				res.sendRedirect(url);
 				return;
 			}
-			// 验证未登录重定向和登录认证是否来自同一个session
-//			String state1 = req.getParameter(ConstSso.LOGIN_STATE);
-//			Object state2 = req.getSession().getAttribute(ConstSso.LOGIN_STATE);
-//			if (state1==null || state2==null || !state1.equals(state2.toString())) {
-//				// 重定向到登录页面
-//				SsoUtil.redirectLogin(req, res, ssoProperties);
-//				return;
-//			}
-			req.getSession().removeAttribute(ConstSso.LOGIN_STATE);
 			// webapp 执行: 校验token有效性
-			String token = req.getParameter(ConstSso.LOGIN_TOKEN_KEY);
-			EdpResult validate = SsoUtil.requestValidateToken(req, ssoProperties, ssoProperties.getRequestRemoteRetry());
+			String token = req.getParameter(ConstSso.LOGIN_ST_KEY);
+			SsoResult validate = SsoUtil.requestValidate(req, ssoProperties, ssoProperties.getRequestRemoteRetry());
 			if (validate.getCode()!=ResultCode.SUCESS) {
 				LOGGER.error("validate failed");
 				SsoUtil.redirectServerError(res, ssoProperties, validate);
 				return;
 			}
 			
-			SsoUtil.saveToken(req, res, ssoProperties, token);
+			SsoUtil.saveTGC(req, res, ssoProperties, token);
 			sessionSharedListener.addSession(req.getSession());
 			LOGGER.info("sign in successful. session={}, t={}", req.getSession().getId(), SsoUtil.hiddenToken(token));
 			res.sendRedirect(url);
@@ -165,26 +151,23 @@ public class WebSigninFilter implements Filter {
 	 */
 	private boolean isLogined(HttpServletRequest req, HttpServletResponse res) {
 
-		String sessionToken = SsoUtil.getTokenFormStorage(req, true);
-		String cookieToken  = SsoUtil.getTokenFormStorage(req, false);
-		// session token无效
-		if (StringUtils.isBlank(sessionToken)) {
+		String sessionTGC = SsoUtil.getTGCFormStorage(req, true);
+		String cookieTGC  = SsoUtil.getTGCFormStorage(req, false);
+		// session tgc无效
+		if (StringUtils.isBlank(sessionTGC)) {
 			return false;
 		}
-		// cookie token无效, 刷新token
-		if (StringUtils.isBlank(cookieToken)) {
-			String newToken = listener.renewToken(sessionToken, req.getRemoteAddr());
-			if (StringUtils.isBlank(newToken)) {
-				SsoUtil.removeTokenFormStorage(req, res);
-				return false;
-			}
-			SsoUtil.saveToken(req, res, ssoProperties, newToken);
+		
+		// cookie tgc无效, 刷新tgc
+		if (StringUtils.isBlank(cookieTGC)) {
+			LOGGER.info("replace cookie '_t_' {}", sessionTGC);
+			SsoUtil.saveTGC(req, res, ssoProperties, sessionTGC);
 			return true;
 		}
 		
 		
 		// 前后端token是否一致
-		boolean equals = sessionToken.equals(cookieToken);
+		boolean equals = sessionTGC.equals(cookieTGC);
 		if (!equals) {
 			CookieUtil.clearCookie(req, res);
 		}

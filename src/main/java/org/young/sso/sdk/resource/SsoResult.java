@@ -2,7 +2,7 @@ package org.young.sso.sdk.resource;
 
 import com.alibaba.fastjson.JSONObject;
 
-public class EdpResult {
+public class SsoResult {
 	
 	/**
 	 * 状态码
@@ -22,19 +22,19 @@ public class EdpResult {
 	private String 	msg 	= "";
 	private Object  model	= null;
 
-	public EdpResult() {
+	public SsoResult() {
 	}
 	
-	public EdpResult(Object  model) {
+	public SsoResult(Object  model) {
 		this.model = model;
 	}
 
-	public EdpResult(int code, String msg) {
+	public SsoResult(int code, String msg) {
 		this.code = code;
 		this.msg = msg;
 	}
 	
-	public EdpResult(int code, String msg, Object  model) {
+	public SsoResult(int code, String msg, Object  model) {
 		this.code = code;
 		this.msg = msg;
 		this.model = model;

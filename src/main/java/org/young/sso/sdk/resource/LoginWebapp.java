@@ -9,11 +9,9 @@ public class LoginWebapp extends BaseBean {
 
 	private static final long serialVersionUID = 1L;
 	
-	private Long appId;
+	private String appserver;
 	
-	private String webappServer;
-	
-	private String webappSignout;
+	private String applogout;
 	
 	private Set<String> sessions;
 	
@@ -21,28 +19,27 @@ public class LoginWebapp extends BaseBean {
 		super();
 	}
 	
-	public LoginWebapp(Long appId, String webappServer, String webappSignout) {
+	public LoginWebapp(String appserver, String applogout) {
 		super();
-		this.appId = appId;
-		this.webappServer = webappServer;
-		this.webappSignout = webappSignout;
+		this.appserver = appserver;
+		this.applogout = applogout;
 		this.sessions = new HashSet<>();
 	}
 
-	public Long getAppId() {
-		return appId;
+	public String getAppserver() {
+		return appserver;
 	}
 
-	public void setAppId(Long appId) {
-		this.appId = appId;
+	public void setAppserver(String appserver) {
+		this.appserver = appserver;
 	}
 
-	public String getWebappServer() {
-		return webappServer;
+	public String getApplogout() {
+		return applogout;
 	}
 
-	public void setWebappServer(String webappServer) {
-		this.webappServer = webappServer;
+	public void setApplogout(String applogout) {
+		this.applogout = applogout;
 	}
 
 	public Set<String> getSessions() {
@@ -52,14 +49,5 @@ public class LoginWebapp extends BaseBean {
 	public void setSessions(Set<String> sessions) {
 		this.sessions = sessions;
 	}
-
-	public String getWebappSignout() {
-		return webappSignout;
-	}
-
-	public void setWebappSignout(String webappSignout) {
-		this.webappSignout = webappSignout;
-	}
-
 
 }

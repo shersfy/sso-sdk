@@ -5,16 +5,17 @@ import javax.servlet.Filter;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.young.sso.sdk.filter.ChangeTenantFilter;
 import org.young.sso.sdk.filter.WebSigninFilter;
 import org.young.sso.sdk.filter.WebSignoutFilter;
 import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.listener.SsoListener;
 
 @Configuration
+@EnableConfigurationProperties(SsoProperties.class)
 @ConditionalOnProperty(prefix=SsoProperties.PREFIX, value="enabled", havingValue="true")
 public class SsoAutoConfiguration {
 	
@@ -49,20 +50,6 @@ public class SsoAutoConfiguration {
 		bean.setName("signoutFilter");
 		bean.addUrlPatterns(ConstSso.SIGN_OUT);
 		addInitParameters(bean, config);
-		return bean;
-	}
-	
-	@Bean
-	@ConditionalOnProperty(prefix=SsoProperties.PREFIX, value="enabled-change-tenant", havingValue="true")
-	public FilterRegistrationBean<ChangeTenantFilter> changeTenantFilter(@Autowired SsoProperties config){
-		
-		ChangeTenantFilter filter = new ChangeTenantFilter(config);
-		FilterRegistrationBean<ChangeTenantFilter> bean = new FilterRegistrationBean<>();
-		bean.setOrder(3);
-		bean.setFilter(filter);
-		bean.setName("changeTenantFilter");
-		bean.addUrlPatterns("/*");
-		
 		return bean;
 	}
 	

@@ -19,7 +19,7 @@ import org.young.sso.sdk.autoconfig.ConstSso;
 import org.young.sso.sdk.autoconfig.SsoProperties;
 import org.young.sso.sdk.listener.MemorySessionShared;
 import org.young.sso.sdk.listener.SessionSharedListener;
-import org.young.sso.sdk.resource.EdpResult;
+import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.utils.SsoUtil;
 
 public class WebSignoutFilter implements Filter {
@@ -102,7 +102,7 @@ public class WebSignoutFilter implements Filter {
 			sessionSharedListener.publishInvalidateSession(sessionId);
 			LOGGER.debug("sessionId=getParameter('{}')", sessionId);
 			
-			EdpResult succ = new EdpResult(sessionId);
+			SsoResult succ = new SsoResult(sessionId);
 			succ.setMsg("sign out successful");
 			succ.setModel(sessionId);
 			

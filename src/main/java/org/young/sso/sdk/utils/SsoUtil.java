@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.apache.http.NameValuePair;
@@ -23,13 +22,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.young.sso.sdk.autoconfig.ConstSso;
-import org.young.sso.sdk.autoconfig.CookieSessionModel;
 import org.young.sso.sdk.autoconfig.SsoProperties;
-import org.young.sso.sdk.resource.EdpResult;
-import org.young.sso.sdk.resource.EdpRole;
-import org.young.sso.sdk.resource.EdpTenant;
 import org.young.sso.sdk.resource.LoginUser;
-import org.young.sso.sdk.resource.EdpResult.ResultCode;
+import org.young.sso.sdk.resource.SsoResult;
+import org.young.sso.sdk.resource.SsoResult.ResultCode;
 import org.young.sso.sdk.utils.HttpUtil.HttpResult;
 
 import com.alibaba.fastjson.JSON;
@@ -144,16 +140,8 @@ public final class SsoUtil {
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
 		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
 
-		String state = RandomStringUtils.randomAlphanumeric(6);
-		req.getSession().setAttribute(ConstSso.LOGIN_STATE, state);
-		
-		String encodeUrl = req.getParameter("webapp")==null?ssoProperties.getWebappServer():req.getParameter("webapp").toString();
-		encodeUrl += encodeUrl.contains("_st_=") ?"" :(encodeUrl.contains("?")? "&_st_="+state :"?_st_="+state);
-		String tenant = req.getParameter("tenant");
-		if (tenant!=null) {
-			tenant = String.format("?tenant=%s&", tenant);
-			encodeUrl = encodeUrl.replaceFirst("\\?", tenant);
-		}
+		String encodeUrl = req.getParameter("webapp");
+		encodeUrl = encodeUrl==null ?ssoProperties.getWebappServer() :encodeUrl;
 		encodeUrl = URLEncoder.encode(encodeUrl, "UTF-8");
 
 		loginPath = HttpUtil.concatUrl(loginPath, "/login");
@@ -161,7 +149,7 @@ public final class SsoUtil {
 
 		// 异步方式, 未登录返回状态-1
 		if (ssoProperties.isAsyncSupported() || SsoUtil.isAjaxRequest(req)) {
-			EdpResult result = new EdpResult(loginPath);
+			SsoResult result = new SsoResult(loginPath);
 			result.setCode(ResultCode.NOT_LOGIN);
 			result.setMsg("not login");
 			res.setContentType(ContentType.APPLICATION_JSON.toString());
@@ -180,7 +168,7 @@ public final class SsoUtil {
 	 * @param error
 	 * @throws IOException
 	 */
-	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoProperties, EdpResult error) throws IOException {
+	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoProperties, SsoResult error) throws IOException {
 		String errorPath = HttpUtil.concatUrl(ssoProperties.getOuterEdpauthSrever(), "/error");
 		errorPath = errorPath+String.format("?code=%s&msg=%s", error.getCode(), URLEncoder.encode(error.getMsg(), "UTF-8"));
 		LOGGER.error("redirect '{}', error:{}", errorPath, error);
@@ -188,38 +176,34 @@ public final class SsoUtil {
 	}
 
 	/***
-	 * 校验token有效性
+	 * 校验ST有效性
 	 * @param req 请求
 	 * @param res 响应
 	 * @param ssoProperties sso配置
 	 * @param token
 	 */
-	public static EdpResult requestValidateToken(HttpServletRequest req, SsoProperties ssoProperties, int retry) {
+	public static SsoResult requestValidate(HttpServletRequest req, SsoProperties ssoProperties, int retry) {
 
 		if (retry<=0) {
-			return new EdpResult(EdpResult.ResultCode.FAIL, "Access SSO server retry timeout");
+			return new SsoResult(SsoResult.ResultCode.FAIL, "Access SSO server retry timeout");
 		}
 
 		String url = ssoProperties.getInnerEdpauthSrever();
 		url = url.endsWith("/")?url.substring(0, url.length()-1):url;
 		url = url+"/login/validate";
 
-		String token = req.getParameter(ConstSso.LOGIN_TOKEN_KEY);
-		String key   = req.getParameter(ConstSso.LOGIN_REQUEST_KEY);
-		String appId = req.getParameter(ConstSso.WEBAPP_ID);
-		if (StringUtils.isBlank(key)) {
-			LOGGER.error("request key '_k_' cannot be empty");
+		String st = req.getParameter(ConstSso.LOGIN_ST_KEY);
+		if (StringUtils.isBlank(st)) {
+			LOGGER.error("request key '_st_' cannot be empty");
 			// 2000007=登录错误: 权限校验失败
-			EdpResult res = new EdpResult();
+			SsoResult res = new SsoResult();
 			res.setCode(2000007);
 			return res;
 		}
 
 		JSONObject json = new JSONObject();
-		json.put("t", token);
-		json.put("k", key);
-		json.put("appId", appId);
-		json.put("webappServer",  ssoProperties.getWebappServer());
+		json.put("st", st);
+		json.put("webappServer", ssoProperties.getWebappServer());
 		json.put("webappSession", req.getSession().getId());
 
 		String data = json.toString();
@@ -229,7 +213,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("rsa encrypt error", e);
 				// 2000014=客户端应用加密异常
-				EdpResult res = new EdpResult();
+				SsoResult res = new SsoResult();
 				res.setCode(2000014);
 				return res;
 			}
@@ -251,27 +235,17 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestValidateToken(req, ssoProperties, retry-1);
+			return requestValidate(req, ssoProperties, retry-1);
 		}
 
 		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
-			if (result.getCode()==EdpResult.ResultCode.SUCESS) {
-				List<EdpRole> list = null;
-				EdpResult roleRes = SsoUtil.requestRoleAll(ssoProperties, ssoProperties.getRequestRemoteRetry(), token);
-				if (roleRes.getCode()==EdpResult.ResultCode.SUCESS) {
-					list = JSON.parseArray(roleRes.getModel().toString(), EdpRole.class);
-					req.getSession().setAttribute(ConstSso.ROLES_ALL, JSON.toJSONString(list));
-				} else {
-					LOGGER.error(res.toString());
-				}
-			}
+			SsoResult result = JSON.parseObject(res.getBody(), SsoResult.class);
 			return result;
 		} catch (Exception e) {
 			LOGGER.error("request error, code={}, url={}, body={}", 
 					res.getCode(), res.getUrl(), res.getBody());
 			LOGGER.error("", e);
-			return new EdpResult(EdpResult.ResultCode.FAIL, "login validate error:"+e.getMessage());
+			return new SsoResult(SsoResult.ResultCode.FAIL, "login validate error:"+e.getMessage());
 		}
 
 	}
@@ -327,7 +301,7 @@ public final class SsoUtil {
 
 		String newToken = null;
 		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
+			SsoResult result = JSON.parseObject(res.getBody(), SsoResult.class);
 			if (result.getCode()==ResultCode.SUCESS) {
 				newToken = result.getModel().toString();
 			}
@@ -352,12 +326,12 @@ public final class SsoUtil {
 	 * @param pageSize
 	 * @return
 	 */
-	public static EdpResult requestRoleList(SsoProperties ssoProperties, int retry,
+	public static SsoResult requestRoleList(SsoProperties ssoProperties, int retry,
 			String token, String keyword, Boolean editable, Boolean disabled,
 			Integer pageNo, Integer pageSize) {
 
 		if (retry<=0) {
-			return new EdpResult(EdpResult.ResultCode.FAIL, "数据加载失败");
+			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
 		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/list");
@@ -397,13 +371,13 @@ public final class SsoUtil {
 		}
 
 		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
+			SsoResult result = JSON.parseObject(res.getBody(), SsoResult.class);
 			return result;
 		} catch (Exception e) {
 			LOGGER.error("request error, code={}, url={}, body={}", 
 					res.getCode(), res.getUrl(), res.getBody());
 			LOGGER.error("", e);
-			return new EdpResult(res.getCode(), res.getBody(), null);
+			return new SsoResult(res.getCode(), res.getBody(), null);
 		}
 
 	}
@@ -415,10 +389,10 @@ public final class SsoUtil {
 	 * @param token
 	 * @return
 	 */
-	public static EdpResult requestRoleAll(SsoProperties ssoProperties, int retry, String token) {
+	public static SsoResult requestRoleAll(SsoProperties ssoProperties, int retry, String token) {
 
 		if (retry<=0) {
-			return new EdpResult(EdpResult.ResultCode.FAIL, "数据加载失败");
+			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
 		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/all");
@@ -443,13 +417,13 @@ public final class SsoUtil {
 		}
 
 		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
+			SsoResult result = JSON.parseObject(res.getBody(), SsoResult.class);
 			return result;
 		} catch (Exception e) {
 			LOGGER.error("request error, code={}, url={}, body={}", 
 					res.getCode(), res.getUrl(), res.getBody());
 			LOGGER.error("", e);
-			return new EdpResult(res.getCode(), res.getBody(), null);
+			return new SsoResult(res.getCode(), res.getBody(), null);
 		}
 
 	}
@@ -499,7 +473,7 @@ public final class SsoUtil {
 
 		LoginUser loginUser = null;
 		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
+			SsoResult result = JSON.parseObject(res.getBody(), SsoResult.class);
 			if (result.getCode() == ResultCode.SUCESS) {
 				loginUser = JSON.parseObject(result.getModel().toString(), LoginUser.class);
 			} else {
@@ -515,73 +489,23 @@ public final class SsoUtil {
 	}
 	
 	/***
-	 * 获取登录用户信息
-	 * @param request  请求对象
-	 * @param ssoProperties SSO配置
-	 * @param retry 重试次数
-	 * @return 登录用户
-	 */
-	public static List<EdpTenant> requestLoginUserTenants(SsoProperties ssoProperties, String token, int retry) {
-		List<EdpTenant> list = new ArrayList<>();
-		if (StringUtils.isBlank(token) || retry<=0) {
-			return list;
-		}
-
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/tenants");
-
-		List<NameValuePair> params = new ArrayList<>();
-		params.add(new BasicNameValuePair("t", token));
-
-		LOGGER.info("request '{}'", url);
-		HttpResult res = HttpUtil.send(url, "post", params, null);
-		if (res.getCode()!=200) {
-			LOGGER.error("request error, code={}, url={}, body={}", 
-					res.getCode(), res.getUrl(), res.getBody());
-			// 递归重试
-			int seconds = RandomUtils.nextInt(5);
-			LOGGER.info("await {} seconds retry ...", seconds);
-			try {
-				Thread.sleep(seconds*1000L);
-			} catch (Exception e) {
-				LOGGER.error("", e);
-			}
-			return requestLoginUserTenants(ssoProperties, token, retry-1);
-		}
-
-		try {
-			EdpResult result = JSON.parseObject(res.getBody(), EdpResult.class);
-			if (result.getCode() == ResultCode.SUCESS) {
-				list = JSON.parseArray(result.getModel().toString(), EdpTenant.class);
-			} else {
-				LOGGER.error("request error, result: {}", result);
-			}
-		} catch (Exception e) {
-			LOGGER.error("request error, code={}, url={}, body={}", 
-					res.getCode(), res.getUrl(), res.getBody());
-			LOGGER.error("", e);
-		}
-
-		return list;
-	}
-
-	/***
 	 * 从存储中获取token
 	 * @param req 请求
 	 * @param fromSession true从session获取否则从cookie获取
 	 * @return
 	 */
-	public static String getTokenFormStorage(HttpServletRequest req, boolean fromSession) {
+	public static String getTGCFormStorage(HttpServletRequest req, boolean fromSession) {
 		// session模式存储
 		if (fromSession) {
-			Object token = req.getSession().getAttribute(ConstSso.LOGIN_TOKEN_KEY);
+			Object token = req.getSession().getAttribute(ConstSso.LOGIN_TGC_KEY);
 			return token!=null?token.toString():null;
 		}
 		// cookie
-		return CookieUtil.getCookieValue(req, ConstSso.LOGIN_TOKEN_KEY);
+		return CookieUtil.getCookieValue(req, ConstSso.LOGIN_TGC_KEY);
 	}
 
 	public static void removeTokenFormStorage(HttpServletRequest req, HttpServletResponse res) {
-		req.getSession().removeAttribute(ConstSso.LOGIN_TOKEN_KEY);
+		req.getSession().removeAttribute(ConstSso.LOGIN_TGC_KEY);
 		CookieUtil.clearCookie(req, res);
 	}
 
@@ -602,7 +526,7 @@ public final class SsoUtil {
 			}
 		}
 		// cookie
-		String cookieLang = CookieUtil.getCookieValue(req, ConstSso.LOGIN_TOKEN_KEY);
+		String cookieLang = CookieUtil.getCookieValue(req, ConstSso.LOGIN_TGC_KEY);
 		if (StringUtils.isNotBlank(cookieLang)) {
 			lang = cookieLang;
 		}
@@ -616,11 +540,11 @@ public final class SsoUtil {
 	 * @param ssoProperties sso配置
 	 * @param token
 	 */
-	public static void saveToken(HttpServletRequest req, HttpServletResponse res, 
+	public static void saveTGC(HttpServletRequest req, HttpServletResponse res, 
 			SsoProperties ssoProperties, String token) {
 
-		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_TOKEN_KEY, token);
-		req.getSession().setAttribute(ConstSso.LOGIN_TOKEN_KEY, token);
+		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_TGC_KEY, token);
+		req.getSession().setAttribute(ConstSso.LOGIN_TGC_KEY, token);
 
 	}
 
@@ -651,11 +575,7 @@ public final class SsoUtil {
 
 		Cookie cookie = new Cookie(key, value);
 		cookie.setPath("/");
-		if (ssoProperties.getCookieSessionModel()==CookieSessionModel.sharing) {
-			cookie.setDomain(ssoProperties.getCookieDomain());
-		} else {
-			cookie.setDomain(req.getServerName());
-		}
+		cookie.setDomain(req.getServerName());
 		cookie.setMaxAge((int)ssoProperties.getTokenMaxAgeSeconds());
 		cookie.setHttpOnly(ssoProperties.isCookieHttpOnly());
 		cookie.setSecure(ssoProperties.isCookieSecure());

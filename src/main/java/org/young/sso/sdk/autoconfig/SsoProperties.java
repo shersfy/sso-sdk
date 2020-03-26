@@ -6,7 +6,7 @@ import org.young.sso.sdk.listener.MemorySessionShared;
 @ConfigurationProperties(SsoProperties.PREFIX)
 public class SsoProperties {
 	
-	public static final String PREFIX ="edpglobal.sso";
+	public static final String PREFIX ="sso";
 
 	/**
 	 * 是否开启单点登录(默认false关闭)
@@ -78,22 +78,6 @@ public class SsoProperties {
 	 */
 	private String sessionSharedListener = MemorySessionShared.class.getName();
 	
-	/**
-	 * 是否启用租户切换
-	 */
-	private boolean enabledChangeTenant = false;
-	
-	/**
-	 * 找不到租户允许访问地址
-	 */
-	private String[] noTenantignoreUrls = {"/appinfo", "/user/current", "/user/tenants"};
-	
-	/**
-	 * Cookie域名
-	 */
-	private String cookieDomain = "edmpglobal.com";
-	
-	private CookieSessionModel cookieSessionModel = CookieSessionModel.sharing;
 	
 	public SsoProperties() {
 		super();
@@ -218,38 +202,6 @@ public class SsoProperties {
 
 	public void setEnabledRsa(boolean enabledRsa) {
 		this.enabledRsa = enabledRsa;
-	}
-
-	public boolean isEnabledChangeTenant() {
-		return enabledChangeTenant;
-	}
-
-	public void setEnabledChangeTenant(boolean enabledChangeTenant) {
-		this.enabledChangeTenant = enabledChangeTenant;
-	}
-	
-	public String getCookieDomain() {
-		return cookieDomain;
-	}
-
-	public void setCookieDomain(String cookieDomain) {
-		this.cookieDomain = cookieDomain;
-	}
-
-	public CookieSessionModel getCookieSessionModel() {
-		return cookieSessionModel;
-	}
-
-	public void setCookieSessionModel(CookieSessionModel cookieSessionModel) {
-		this.cookieSessionModel = cookieSessionModel;
-	}
-
-	public String[] getNoTenantignoreUrls() {
-		return noTenantignoreUrls;
-	}
-
-	public void setNoTenantignoreUrls(String[] noTenantignoreUrls) {
-		this.noTenantignoreUrls = noTenantignoreUrls;
 	}
 
 }

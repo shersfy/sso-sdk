@@ -14,16 +14,16 @@ public interface ConstSso {
 	String EDPADMIN_SREVER = "edpadminSrever";
 	/** 登录session **/
 	String LOGIN_SESSION_ID    = "_sid_";
-	/** 登录token key **/
-	String LOGIN_TOKEN_KEY  = "_t_";
+	/** 登录TGC key **/
+	String LOGIN_TGC_KEY  = "_t_";
+	/** SSO server分发的ST **/
+	String LOGIN_ST_KEY   = "_st_";
 	/** 登录公钥 **/
 	String LOGIN_PUBLIC_KEY	= "_p_";
 	/** 登录语言key **/
 	String LOGIN_LANGUAGE   = "lang";
 	/** 登录请求 key **/
 	String LOGIN_REQUEST_KEY	= "_k_";
-	/** 重定向随机状态码(用于验证是重定向和登录认证是同一个session) **/
-	String LOGIN_STATE  		= "_st_";
 	/**token长度**/
 	int LOGIN_TOKEN_LENGTH = 10;
 	/**退出地址**/
