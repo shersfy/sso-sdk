@@ -35,9 +35,14 @@ public class SsoProperties {
 	private String outerEdpauthSrever = "";
 	
 	/**
-	 * Web应用服务器注册地址
+	 * 客户端应用服务注册地址
 	 */
 	private String webappServer = "";
+	
+	/**
+	 * 客户端应用退出地址
+	 */
+	private String webappLogout = "/sign/out";
 	
 	/**
 	 * 单点登录过滤器忽略的URL地址
@@ -82,8 +87,7 @@ public class SsoProperties {
 	 * session共享处理类，默认配置com.gouuse.edpglobal.sso.listener.MemorySessionShared
 	 */
 	private String sessionSharedListener = MemorySessionShared.class.getName();
-	
-	
+
 	public SsoProperties() {
 		super();
 	}
@@ -92,9 +96,9 @@ public class SsoProperties {
 		super();
 		this.enabled = enabled;
 		this.outerEdpauthSrever = outerEdpauthSrever;
-		this.innerEdpauthSrever = outerEdpauthSrever;
 		this.webappServer = webappServer;
 	}
+
 
 	public boolean isEnabled() {
 		return enabled;
@@ -142,6 +146,14 @@ public class SsoProperties {
 
 	public void setWebappServer(String webappServer) {
 		this.webappServer = webappServer;
+	}
+
+	public String getWebappLogout() {
+		return webappLogout;
+	}
+
+	public void setWebappLogout(String webappLogout) {
+		this.webappLogout = webappLogout;
 	}
 
 	public String[] getIgnoreUrls() {

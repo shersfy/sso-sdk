@@ -24,6 +24,9 @@ public class LoginUser extends BaseBean {
    
     /** 备注 **/
     private String note;
+    
+    /** 登录ID **/
+    private String loginId;
 	
 	public LoginUser() {
 		super();
@@ -89,6 +92,14 @@ public class LoginUser extends BaseBean {
 
 	public void setNote(String note) {
 		this.note = note;
+	}
+
+	public String getLoginId() {
+		return loginId;
+	}
+
+	public void setLoginId(String loginId) {
+		this.loginId = loginId;
 	}
 
 }

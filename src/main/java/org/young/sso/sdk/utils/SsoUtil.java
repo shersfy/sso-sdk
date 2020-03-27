@@ -1,6 +1,7 @@
 package org.young.sso.sdk.utils;
 
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -59,8 +60,9 @@ public final class SsoUtil {
 		
 		SsoProperties ssoProperties = new SsoProperties(StringUtils.isBlank(enabled)?false:Boolean.valueOf(enabled), 
 				outerEdpauthSrever, webappServer);
-
+		
 		ssoProperties.setInnerEdpauthSrever(innerEdpauthSrever);
+		ssoProperties.setWebappLogout(filterConfig.getInitParameter("webappLogout"));
 
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("asyncSupported"))) {
 			ssoProperties.setAsyncSupported(Boolean.valueOf(filterConfig.getInitParameter("asyncSupported")));
@@ -192,8 +194,9 @@ public final class SsoUtil {
 		String st = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
 		String rk = req.getParameter(ConstSso.LOGIN_REQUEST_KEY);
 		try {
+			String apphost = new URL(ssoProperties.getWebappServer()).getHost();
 			rk = rk.split("-")[1];
-			rk = SsoAESUtil.decryptHexStr(rk, SsoAESUtil.AES_SEED);
+			rk = SsoAESUtil.decryptHexStr(rk, apphost);
 		} catch (Exception e) {
 			LOGGER.error("decrypt error", e);
 			return new SsoResult(520, "client webapp request key rk decrypt error:"+SsoException.getRootCauseMsg(e));

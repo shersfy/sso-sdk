@@ -56,6 +56,7 @@ public class SsoAutoConfiguration {
 		bean.addInitParameter("outerEdpauthSrever", config.getOuterEdpauthSrever());
 		bean.addInitParameter("innerEdpauthSrever", config.getInnerEdpauthSrever());
 		bean.addInitParameter("webappServer", config.getWebappServer());
+		bean.addInitParameter("webappLogout", config.getWebappLogout());
 		
 		bean.addInitParameter("enabledRsa", String.valueOf(config.isEnabledRsa()));
 		bean.addInitParameter("asyncSupported", String.valueOf(config.isAsyncSupported()));
