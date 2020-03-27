@@ -14,10 +14,8 @@ public interface ConstSso {
 	String EDPADMIN_SREVER = "edpadminSrever";
 	/** 登录session **/
 	String LOGIN_SESSION_ID    = "_sid_";
-	/** 登录TGC key **/
-	String LOGIN_TGC_KEY  = "_t_";
-	/** SSO server分发的ST **/
-	String LOGIN_ST_KEY   = "_st_";
+	/** 登录Ticket Key **/
+	String LOGIN_TICKET_KEY = "_t_";
 	/** 登录公钥 **/
 	String LOGIN_PUBLIC_KEY	= "_p_";
 	/** 登录语言key **/

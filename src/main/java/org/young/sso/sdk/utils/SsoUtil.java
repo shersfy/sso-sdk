@@ -188,9 +188,9 @@ public final class SsoUtil {
 		url = url.endsWith("/")?url.substring(0, url.length()-1):url;
 		url = url+"/login/validate";
 
-		String st = req.getParameter(ConstSso.LOGIN_ST_KEY);
+		String st = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
 		if (StringUtils.isBlank(st)) {
-			LOGGER.error("request key '_st_' cannot be empty");
+			LOGGER.error("service ticket '_t_' cannot be empty");
 			// 2000007=登录错误: 权限校验失败
 			SsoResult res = new SsoResult();
 			res.setCode(2000007);
@@ -493,15 +493,15 @@ public final class SsoUtil {
 	public static String getTGCFormStorage(HttpServletRequest req, boolean fromSession) {
 		// session模式存储
 		if (fromSession) {
-			Object token = req.getSession().getAttribute(ConstSso.LOGIN_TGC_KEY);
+			Object token = req.getSession().getAttribute(ConstSso.LOGIN_TICKET_KEY);
 			return token!=null?token.toString():null;
 		}
 		// cookie
-		return CookieUtil.getCookieValue(req, ConstSso.LOGIN_TGC_KEY);
+		return CookieUtil.getCookieValue(req, ConstSso.LOGIN_TICKET_KEY);
 	}
 
 	public static void removeTokenFormStorage(HttpServletRequest req, HttpServletResponse res) {
-		req.getSession().removeAttribute(ConstSso.LOGIN_TGC_KEY);
+		req.getSession().removeAttribute(ConstSso.LOGIN_TICKET_KEY);
 		CookieUtil.clearCookie(req, res);
 	}
 
@@ -522,7 +522,7 @@ public final class SsoUtil {
 			}
 		}
 		// cookie
-		String cookieLang = CookieUtil.getCookieValue(req, ConstSso.LOGIN_TGC_KEY);
+		String cookieLang = CookieUtil.getCookieValue(req, ConstSso.LOGIN_TICKET_KEY);
 		if (StringUtils.isNotBlank(cookieLang)) {
 			lang = cookieLang;
 		}
@@ -539,8 +539,8 @@ public final class SsoUtil {
 	public static void saveTGC(HttpServletRequest req, HttpServletResponse res, 
 			SsoProperties ssoProperties, String token) {
 
-		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_TGC_KEY, token);
-		req.getSession().setAttribute(ConstSso.LOGIN_TGC_KEY, token);
+		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_TICKET_KEY, token);
+		req.getSession().setAttribute(ConstSso.LOGIN_TICKET_KEY, token);
 
 	}
 

@@ -96,13 +96,13 @@ public class WebSigninFilter implements Filter {
 		LOGGER.debug("== port:{}", req.getServerPort());
 		LOGGER.debug("== url:{}", req.getRequestURL());
 		LOGGER.debug("== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
-		LOGGER.debug("== st:{}", req.getParameter(ConstSso.LOGIN_ST_KEY));
+		LOGGER.debug("== ticket:{}", req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		
 		this.setBasePath(req);
 		String url = req.getRequestURI();
 		
 		// 登录系统重定向过来的请求
-		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_ST_KEY));
+		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever());
 		if (isWebappLogin) {
 						
@@ -111,7 +111,7 @@ public class WebSigninFilter implements Filter {
 				return;
 			}
 			// webapp 执行: 校验token有效性
-			String token = req.getParameter(ConstSso.LOGIN_ST_KEY);
+			String token = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
 			SsoResult validate = SsoUtil.requestValidate(req, ssoProperties, ssoProperties.getRequestRemoteRetry());
 			if (validate.getCode()!=ResultCode.SUCESS) {
 				LOGGER.error("validate failed");
@@ -160,17 +160,17 @@ public class WebSigninFilter implements Filter {
 		
 		// cookie tgc无效, 刷新tgc
 		if (StringUtils.isBlank(cookieTGC)) {
-			LOGGER.info("replace cookie '_t_' {}", sessionTGC);
+			LOGGER.info("replace cookie TGC '_t_' {}", sessionTGC);
 			SsoUtil.saveTGC(req, res, ssoProperties, sessionTGC);
 			return true;
 		}
-		
 		
 		// 前后端token是否一致
 		boolean equals = sessionTGC.equals(cookieTGC);
 		if (!equals) {
 			CookieUtil.clearCookie(req, res);
 		}
+		
 		return equals;
 	}
 
