@@ -165,7 +165,7 @@ public class WebSigninFilter implements Filter {
 		
 		// cookie tgc无效, 刷新tgc
 		if (StringUtils.isBlank(cookieTGC)) {
-			LOGGER.info("replace cookie TGC '_t_' {}", sessionTGC);
+			LOGGER.info("replace cookie TGC '_t_' {}", SsoUtil.hiddenToken(sessionTGC));
 			SsoUtil.saveTGC(req, res, ssoProperties, sessionTGC);
 			return true;
 		}
