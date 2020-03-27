@@ -22,6 +22,8 @@ public class LoginUser extends BaseBean {
     /** 状态志(0:正常(默认)，1：失效) **/
     private Integer status;
    
+    /** 备注 **/
+    private String note;
 	
 	public LoginUser() {
 		super();
@@ -79,6 +81,14 @@ public class LoginUser extends BaseBean {
 
 	public void setStatus(Integer status) {
 		this.status = status;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
 	}
 
 }

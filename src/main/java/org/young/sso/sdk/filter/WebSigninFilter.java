@@ -92,11 +92,11 @@ public class WebSigninFilter implements Filter {
 		res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
 		res.setHeader("Access-Control-Allow-Headers", "*");
 
-		LOGGER.info("== method:{}", req.getMethod());
-		LOGGER.info("== port:{}", req.getServerPort());
-		LOGGER.info("== url:{}", req.getRequestURL());
-		LOGGER.info("== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
-		LOGGER.info("== st:{}", req.getParameter(ConstSso.LOGIN_ST_KEY));
+		LOGGER.debug("== method:{}", req.getMethod());
+		LOGGER.debug("== port:{}", req.getServerPort());
+		LOGGER.debug("== url:{}", req.getRequestURL());
+		LOGGER.debug("== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
+		LOGGER.debug("== st:{}", req.getParameter(ConstSso.LOGIN_ST_KEY));
 		
 		this.setBasePath(req);
 		String url = req.getRequestURI();
