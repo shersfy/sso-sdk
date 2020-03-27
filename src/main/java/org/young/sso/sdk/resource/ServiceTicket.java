@@ -7,55 +7,63 @@ public class ServiceTicket extends BaseBean {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	 * st值
+	 * 明文RequestKey
 	 */
-	private String st;
+	private String rk;
 	
 	/**
-	 * 客户端应用服务器地址
+	 * 密文TicketGrantingCookie值
 	 */
-	private String appserver;
+	private String tgc;
 	
 	/**
-	 * 客户端应用session ID
+	 * 客户端应用host
 	 */
-	private String appsession;
+	private String apphost;
 	
-	/**
-	 * 客户端应用退出地址(全路径)
-	 */
-	private String applogout;
 
-	public String getSt() {
-		return st;
+	public ServiceTicket() {
+		super();
+	}
+	
+
+	public ServiceTicket(String rk, String tgc, String apphost) {
+		super();
+		this.rk = rk;
+		this.tgc = tgc;
+		this.apphost = apphost;
 	}
 
-	public void setSt(String st) {
-		this.st = st;
+
+
+
+	public String getRk() {
+		return rk;
 	}
 
-	public String getAppserver() {
-		return appserver;
+
+	public void setRk(String rk) {
+		this.rk = rk;
 	}
 
-	public void setAppserver(String appserver) {
-		this.appserver = appserver;
+
+	public String getTgc() {
+		return tgc;
 	}
 
-	public String getAppsession() {
-		return appsession;
+
+	public void setTgc(String tgc) {
+		this.tgc = tgc;
 	}
 
-	public void setAppsession(String appsession) {
-		this.appsession = appsession;
+
+	public String getApphost() {
+		return apphost;
 	}
 
-	public String getApplogout() {
-		return applogout;
-	}
 
-	public void setApplogout(String applogout) {
-		this.applogout = applogout;
+	public void setApphost(String apphost) {
+		this.apphost = apphost;
 	}
 
 }

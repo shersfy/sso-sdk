@@ -50,9 +50,14 @@ public class SsoProperties {
 	private String[] ignoreResources = {".js", ".css", ".png", ".ico", ".html"};
 	
 	/**
-	 * token最大有效时间(秒，默认1min=60s)
+	 * TGC最大有效时间(秒，默认10s)
 	 */
-	private long tokenMaxAgeSeconds = 1*60L;
+	private int stMaxAgeSeconds = 10;
+	
+	/**
+	 * TGC最大有效时间(秒，默认1min=60s)
+	 */
+	private int tgcMaxAgeSeconds = 1*60;
 	
 	/**
 	 * HttpOnly（默认false）
@@ -107,7 +112,6 @@ public class SsoProperties {
 		this.asyncSupported = asyncSupported;
 	}
 
-
 	public boolean isAutoRemoveWebappFromServer() {
 		return autoRemoveWebappFromServer;
 	}
@@ -156,12 +160,20 @@ public class SsoProperties {
 		this.ignoreResources = ignoreResources;
 	}
 
-	public long getTokenMaxAgeSeconds() {
-		return tokenMaxAgeSeconds;
+	public int getStMaxAgeSeconds() {
+		return stMaxAgeSeconds;
 	}
 
-	public void setTokenMaxAgeSeconds(long tokenMaxAgeSeconds) {
-		this.tokenMaxAgeSeconds = tokenMaxAgeSeconds;
+	public void setStMaxAgeSeconds(int stMaxAgeSeconds) {
+		this.stMaxAgeSeconds = stMaxAgeSeconds;
+	}
+
+	public int getTgcMaxAgeSeconds() {
+		return tgcMaxAgeSeconds;
+	}
+
+	public void setTgcMaxAgeSeconds(int tgcMaxAgeSeconds) {
+		this.tgcMaxAgeSeconds = tgcMaxAgeSeconds;
 	}
 
 	public boolean isCookieHttpOnly() {
@@ -180,6 +192,14 @@ public class SsoProperties {
 		this.cookieSecure = cookieSecure;
 	}
 
+	public boolean isEnabledRsa() {
+		return enabledRsa;
+	}
+
+	public void setEnabledRsa(boolean enabledRsa) {
+		this.enabledRsa = enabledRsa;
+	}
+
 	public int getRequestRemoteRetry() {
 		return requestRemoteRetry;
 	}
@@ -194,14 +214,6 @@ public class SsoProperties {
 
 	public void setSessionSharedListener(String sessionSharedListener) {
 		this.sessionSharedListener = sessionSharedListener;
-	}
-
-	public boolean isEnabledRsa() {
-		return enabledRsa;
-	}
-
-	public void setEnabledRsa(boolean enabledRsa) {
-		this.enabledRsa = enabledRsa;
 	}
 
 }

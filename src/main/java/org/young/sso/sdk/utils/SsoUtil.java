@@ -77,8 +77,8 @@ public final class SsoUtil {
 			ssoProperties.setCookieSecure(Boolean.valueOf(filterConfig.getInitParameter("cookieSecure")));
 		}
 
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("tokenMaxAgeSeconds"))) {
-			ssoProperties.setTokenMaxAgeSeconds(Long.parseLong(filterConfig.getInitParameter("tokenMaxAgeSeconds")));
+		if (StringUtils.isNotBlank(filterConfig.getInitParameter("tgcMaxAgeSeconds"))) {
+			ssoProperties.setTgcMaxAgeSeconds(Integer.valueOf(filterConfig.getInitParameter("tgcMaxAgeSeconds")));
 		}
 
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("ignoreUrls"))) {
@@ -572,7 +572,7 @@ public final class SsoUtil {
 		Cookie cookie = new Cookie(key, value);
 		cookie.setPath("/");
 		cookie.setDomain(req.getServerName());
-		cookie.setMaxAge((int)ssoProperties.getTokenMaxAgeSeconds());
+		cookie.setMaxAge(ssoProperties.getTgcMaxAgeSeconds());
 		cookie.setHttpOnly(ssoProperties.isCookieHttpOnly());
 		cookie.setSecure(ssoProperties.isCookieSecure());
 		CookieUtil.addCookie(res, cookie);
