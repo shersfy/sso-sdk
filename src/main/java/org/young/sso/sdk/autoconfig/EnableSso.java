@@ -7,6 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Import;
 
 /***
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Inherited
 @Import(SsoAutoConfiguration.class)
+@EnableConfigurationProperties(SsoProperties.class)
 public @interface EnableSso {
 
 }

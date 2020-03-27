@@ -5,7 +5,6 @@ import javax.servlet.Filter;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +14,6 @@ import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.listener.SsoListener;
 
 @Configuration
-@EnableConfigurationProperties(SsoProperties.class)
 @ConditionalOnProperty(prefix=SsoProperties.PREFIX, value="enabled", havingValue="true")
 public class SsoAutoConfiguration {
 	

@@ -51,10 +51,6 @@ public final class SsoUtil {
 
 		// webapp
 		if (StringUtils.isNotBlank(webappServer)) {
-			if (StringUtils.isBlank(outerEdpauthSrever)) {
-				throw new ServletException("outerEdpauthSrever cannot null");
-			}
-			
 			if (StringUtils.isBlank(innerEdpauthSrever)) {
 				innerEdpauthSrever = outerEdpauthSrever;
 			}
