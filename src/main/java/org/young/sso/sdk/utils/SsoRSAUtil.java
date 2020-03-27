@@ -16,13 +16,13 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.openssl.PEMParser;
 import org.springframework.util.Assert;
 
-public final class RSAUtil {
+public final class SsoRSAUtil {
 	
 	private static final String PUB_PEM_FILE  = "edpadmin_pub.pem";
 	private static final int MAX_BYTES_LENGTH = 2048;
 	private static final int MAX_ENCRYPT_BLOCK_LENGTH = 245;
 	
-	private RSAUtil() {}
+	private SsoRSAUtil() {}
 	
 	/**
 	 * 加密，被加密数据不能超过2048字节

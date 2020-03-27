@@ -103,25 +103,30 @@ public class WebSigninFilter implements Filter {
 		
 		// 登录系统重定向过来的请求
 		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_TICKET_KEY));
+		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_REQUEST_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever());
 		if (isWebappLogin) {
-						
+			if (StringUtils.isNotBlank(ssoProperties.getWebappServer())) {
+				throw new ServletException("client webappServer cannot be blank");
+			}
 			if (isLogined(req, res)) {
 				res.sendRedirect(url);
 				return;
 			}
-			// webapp 执行: 校验token有效性
-			String token = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
+			
+			// webapp 执行: 校验ST有效性
+			String webapp = ssoProperties.getWebappServer();
 			SsoResult validate = SsoUtil.requestValidate(req, ssoProperties, ssoProperties.getRequestRemoteRetry());
 			if (validate.getCode()!=ResultCode.SUCESS) {
-				LOGGER.error("validate failed");
+				LOGGER.error("webapp '{}' validate failed", webapp);
 				SsoUtil.redirectServerError(res, ssoProperties, validate);
 				return;
 			}
 			
-			SsoUtil.saveTGC(req, res, ssoProperties, token);
+			SsoUtil.saveTGC(req, res, ssoProperties, validate.getModel().toString());
 			sessionSharedListener.addSession(req.getSession());
-			LOGGER.info("sign in successful. session={}, t={}", req.getSession().getId(), SsoUtil.hiddenToken(token));
+			LOGGER.info("webapp '{}' sign in successful. session={}, TGC={}", 
+					webapp, req.getSession().getId(), SsoUtil.hiddenToken(validate.getModel().toString()));
 			res.sendRedirect(url);
 			return;
 		}
@@ -165,7 +170,7 @@ public class WebSigninFilter implements Filter {
 			return true;
 		}
 		
-		// 前后端token是否一致
+		// 前后端TGC是否一致
 		boolean equals = sessionTGC.equals(cookieTGC);
 		if (!equals) {
 			CookieUtil.clearCookie(req, res);

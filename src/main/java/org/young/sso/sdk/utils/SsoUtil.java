@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.young.sso.sdk.autoconfig.ConstSso;
 import org.young.sso.sdk.autoconfig.SsoProperties;
+import org.young.sso.sdk.exception.SsoException;
 import org.young.sso.sdk.resource.LoginUser;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.resource.SsoResult.ResultCode;
@@ -189,29 +190,32 @@ public final class SsoUtil {
 		url = url+"/login/validate";
 
 		String st = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
-		if (StringUtils.isBlank(st)) {
-			LOGGER.error("service ticket '_t_' cannot be empty");
-			// 2000007=登录错误: 权限校验失败
-			SsoResult res = new SsoResult();
-			res.setCode(2000007);
-			return res;
+		String rk = req.getParameter(ConstSso.LOGIN_REQUEST_KEY);
+		try {
+			rk = rk.split("-")[1];
+			rk = SsoAESUtil.decryptHexStr(rk, SsoAESUtil.AES_SEED);
+		} catch (Exception e) {
+			LOGGER.error("decrypt error", e);
+			return new SsoResult(520, "client webapp request key rk decrypt error:"+SsoException.getRootCauseMsg(e));
 		}
-
+		
 		JSONObject json = new JSONObject();
+		json.put("rk", rk);
 		json.put("st", st);
-		json.put("webappServer", ssoProperties.getWebappServer());
 		json.put("webappSession", req.getSession().getId());
+		json.put("webappServer", ssoProperties.getWebappServer());
+		json.put("webappLogout", ConstSso.SIGN_OUT[0]);
 
 		String data = json.toString();
 		if (ssoProperties.isEnabledRsa()) {
 			try {
-				data = new String(RSAUtil.encrypt(data.getBytes()));
+				data = new String(SsoRSAUtil.encrypt(data.getBytes()));
 			} catch (Exception e) {
 				LOGGER.error("rsa encrypt error", e);
 				// 2000014=客户端应用加密异常
 				SsoResult res = new SsoResult();
 				res.setCode(2000014);
-				return res;
+				return new SsoResult(520, "client webapp rsa encrypt error:"+SsoException.getRootCauseMsg(e));
 			}
 		}
 
@@ -241,7 +245,7 @@ public final class SsoUtil {
 			LOGGER.error("request error, code={}, url={}, body={}", 
 					res.getCode(), res.getUrl(), res.getBody());
 			LOGGER.error("", e);
-			return new SsoResult(SsoResult.ResultCode.FAIL, "login validate error:"+e.getMessage());
+			return new SsoResult(520, "client webapp login validate error:"+SsoException.getRootCauseMsg(e));
 		}
 
 	}
@@ -269,7 +273,7 @@ public final class SsoUtil {
 		String data = json.toString();
 		if (ssoProperties.isEnabledRsa()) {
 			try {
-				data = new String(RSAUtil.encrypt(data.getBytes()));
+				data = new String(SsoRSAUtil.encrypt(data.getBytes()));
 			} catch (Exception e) {
 				LOGGER.error("rsa encrypt error", e);
 				return null;

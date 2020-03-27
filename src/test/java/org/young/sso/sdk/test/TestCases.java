@@ -2,7 +2,7 @@ package org.young.sso.sdk.test;
 
 import org.junit.Test;
 import org.young.sso.sdk.utils.DomainUtil;
-import org.young.sso.sdk.utils.RSAUtil;
+import org.young.sso.sdk.utils.SsoRSAUtil;
 
 import com.alibaba.fastjson.JSON;
 
@@ -11,7 +11,7 @@ public class TestCases {
     @Test
     public void test01() throws Exception {
     	String data = "hello世界";
-    	System.out.println(new String(RSAUtil.encrypt(data.getBytes())));
+    	System.out.println(new String(SsoRSAUtil.encrypt(data.getBytes())));
     }
     
     @Test
