@@ -162,7 +162,6 @@ public class WebSigninFilter implements Filter {
 	 */
 	private boolean isLogined(HttpServletRequest req, HttpServletResponse res) {
 		
-		LOGGER.info("session={}", req.getSession().getId());
 		Object user = req.getSession().getAttribute(ConstSso.SESSION_LOGIN_USER);
 		if (user!=null) {
 			return true;
