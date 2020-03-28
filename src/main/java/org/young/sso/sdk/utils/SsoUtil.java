@@ -64,7 +64,7 @@ public final class SsoUtil {
 			String name = names.nextElement();
 			String value = filterConfig.getInitParameter(name);
 			String setter = "set"+StringUtils.capitalize(name);
-			LOGGER.info("name={}, value={}", name, value);
+			LOGGER.info("sso property {}={}", name, value);
 			if (value==null) {
 				continue;
 			}
@@ -179,11 +179,11 @@ public final class SsoUtil {
 	public static void redirectLogout(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
 		
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
-		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
-		loginPath = HttpUtil.concatUrl(loginPath, ConstSso.SIGN_OUT[0]);
+		String logoutPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
+		logoutPath = HttpUtil.concatUrl(logoutPath, ConstSso.SIGN_OUT[0]);
 		// 重定向到登出
-		LOGGER.info("redirect to {}", loginPath);
-		res.sendRedirect(loginPath);
+		LOGGER.info("redirect to {}", logoutPath);
+		res.sendRedirect(logoutPath);
 	}
 
 	/**

@@ -47,7 +47,7 @@ public class SsoProperties {
 	/**
 	 * 单点登录过滤器忽略的URL地址
 	 */
-	private String[] ignoreUrls = {};
+	private String[] ignoreUrls = {"/sign/out"};
 	
 	/**
 	 * 单点登录过滤器忽略的静态资源文件(扩展名,默认{".js", ".css", ".png", ".ico", ".html"})

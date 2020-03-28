@@ -112,7 +112,7 @@ public class WebSigninFilter implements Filter {
 			}
 			
 			if (isLogined(req, res)) {
-				LOGGER.info("redirect to {}", url);
+				LOGGER.info("redirect to {}", req.getRequestURL());
 				res.sendRedirect(url);
 				return;
 			}
@@ -132,7 +132,7 @@ public class WebSigninFilter implements Filter {
 			LOGGER.info("webapp '{}' sign in successful. session={}, loginUser={}", 
 					webapp, req.getSession().getId(), loginUser);
 			
-			LOGGER.info("redirect to {}", url);
+			LOGGER.info("redirect to {}", req.getRequestURL());
 			res.sendRedirect(url);
 			return;
 		}
