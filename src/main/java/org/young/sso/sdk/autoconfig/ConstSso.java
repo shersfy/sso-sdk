@@ -4,29 +4,35 @@ public interface ConstSso {
 	
 	/** 请求基础地址key **/
 	String BASE_PATH = "basePath";
-	/** 应用ID**/
-	String WEBAPP_ID = "appId";
-	/** 全部角色**/
-	String ROLES_ALL = "allRoles";
+	
 	/** 应用服务器 **/
 	String WEBAPP_SERVER   = "webappServer";
 	/** EDP服务器地址 **/
 	String EDPADMIN_SREVER = "edpadminSrever";
+	
 	/** 登录session **/
 	String LOGIN_SESSION_ID    = "_sid_";
 	/** 登录Ticket Key **/
 	String LOGIN_TICKET_KEY = "_t_";
 	/** 登录公钥 **/
 	String LOGIN_PUBLIC_KEY	= "_p_";
+	
 	/** 登录语言key **/
 	String LOGIN_LANGUAGE   = "lang";
 	/** 登录请求 key **/
 	String LOGIN_REQUEST_KEY	= "_k_";
-	/**token长度**/
-	int LOGIN_TOKEN_LENGTH = 10;
+	
 	/**退出地址**/
 	String[] SIGN_OUT = {"/sign/out", "/logout"};
 	
-	/** 当前租户Key **/
-	String CURRENT_TENANT_KEY = "tenant";
+	/** Session属性已登录用户 **/
+	String SESSION_LOGIN_USER    = "loginUser";
+	/** Session属性已登录应用 **/
+	String SESSION_LOGIN_WEBAPPS = "loginWebapps";
+	
+	/** 隐藏保留长度 **/
+	int HIDDEN_REMAIN = 10;
+	/** 隐藏密码 **/
+	String HIDDEN_CODE = "******";
+	
 }

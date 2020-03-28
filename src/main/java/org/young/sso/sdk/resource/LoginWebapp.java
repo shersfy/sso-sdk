@@ -17,13 +17,13 @@ public class LoginWebapp extends BaseBean {
 	
 	public LoginWebapp() {
 		super();
+		this.sessions = new HashSet<>();
 	}
 	
 	public LoginWebapp(String appserver, String applogout) {
-		super();
+		this();
 		this.appserver = appserver;
 		this.applogout = applogout;
-		this.sessions = new HashSet<>();
 	}
 
 	public String getAppserver() {

@@ -61,9 +61,10 @@ public class SsoAutoConfiguration {
 		bean.addInitParameter("enabledRsa", String.valueOf(config.isEnabledRsa()));
 		bean.addInitParameter("asyncSupported", String.valueOf(config.isAsyncSupported()));
 		bean.addInitParameter("autoRemoveWebappFromServer", String.valueOf(config.isAutoRemoveWebappFromServer()));
+		bean.addInitParameter("cookieName", String.valueOf(config.getCookieName()));
 		bean.addInitParameter("cookieHttpOnly", String.valueOf(config.isCookieHttpOnly()));
 		bean.addInitParameter("cookieSecure", String.valueOf(config.isCookieSecure()));
-		bean.addInitParameter("tgcMaxAgeSeconds", String.valueOf(config.getTgcMaxAgeSeconds()));
+		bean.addInitParameter("tgtMaxAgeSeconds", String.valueOf(config.getTgtMaxAgeSeconds()));
 		bean.addInitParameter("requestRemoteRetry", String.valueOf(config.getRequestRemoteRetry()));
 		bean.addInitParameter("ignoreUrls", StringUtils.join(config.getIgnoreUrls(), ","));
 		bean.addInitParameter("ignoreResources", StringUtils.join(config.getIgnoreResources(), ","));

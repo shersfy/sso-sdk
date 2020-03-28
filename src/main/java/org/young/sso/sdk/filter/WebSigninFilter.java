@@ -22,8 +22,9 @@ import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.listener.SsoListener;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.resource.SsoResult.ResultCode;
-import org.young.sso.sdk.utils.CookieUtil;
 import org.young.sso.sdk.utils.SsoUtil;
+
+import com.alibaba.fastjson.JSON;
 
 
 /**
@@ -109,6 +110,7 @@ public class WebSigninFilter implements Filter {
 			if (StringUtils.isNotBlank(ssoProperties.getWebappServer())) {
 				throw new ServletException("client webappServer cannot be blank");
 			}
+			
 			if (isLogined(req, res)) {
 				res.sendRedirect(url);
 				return;
@@ -123,10 +125,10 @@ public class WebSigninFilter implements Filter {
 				return;
 			}
 			
-			SsoUtil.saveTGC(req, res, ssoProperties, validate.getModel().toString());
+			SsoUtil.saveLoginUser(req, JSON.toJSONString(validate.getModel()));
 			sessionSharedListener.addSession(req.getSession());
 			LOGGER.info("webapp '{}' sign in successful. session={}, TGC={}", 
-					webapp, req.getSession().getId(), SsoUtil.hiddenToken(validate.getModel().toString()));
+					webapp, req.getSession().getId(), SsoUtil.hiddenTicket(validate.getModel().toString()));
 			res.sendRedirect(url);
 			return;
 		}
@@ -155,28 +157,12 @@ public class WebSigninFilter implements Filter {
 	 * @return true已登录，false未登录
 	 */
 	private boolean isLogined(HttpServletRequest req, HttpServletResponse res) {
-
-		String sessionTGC = SsoUtil.getTGCFormStorage(req, true);
-		String cookieTGC  = SsoUtil.getTGCFormStorage(req, false);
-		// session tgc无效
-		if (StringUtils.isBlank(sessionTGC)) {
-			return false;
-		}
 		
-		// cookie tgc无效, 刷新tgc
-		if (StringUtils.isBlank(cookieTGC)) {
-			LOGGER.info("replace cookie TGC '_t_' {}", SsoUtil.hiddenToken(sessionTGC));
-			SsoUtil.saveTGC(req, res, ssoProperties, sessionTGC);
+		Object user = req.getSession().getAttribute(ConstSso.SESSION_LOGIN_USER);
+		if (user!=null) {
 			return true;
 		}
-		
-		// 前后端TGC是否一致
-		boolean equals = sessionTGC.equals(cookieTGC);
-		if (!equals) {
-			CookieUtil.clearCookie(req, res);
-		}
-		
-		return equals;
+		return false;
 	}
 
 	private boolean ignore(String url) {
@@ -221,6 +207,5 @@ public class WebSigninFilter implements Filter {
 	public void setSessionSharedListener(SessionSharedListener sessionSharedListener) {
 		this.sessionSharedListener = sessionSharedListener;
 	}
-
 
 }

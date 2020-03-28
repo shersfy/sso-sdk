@@ -57,19 +57,23 @@ public final class SsoUtil {
 				innerEdpauthSrever = outerEdpauthSrever;
 			}
 		}
-		
+
 		SsoProperties ssoProperties = new SsoProperties(StringUtils.isBlank(enabled)?false:Boolean.valueOf(enabled), 
 				outerEdpauthSrever, webappServer);
-		
+
 		ssoProperties.setInnerEdpauthSrever(innerEdpauthSrever);
 		ssoProperties.setWebappLogout(filterConfig.getInitParameter("webappLogout"));
 
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("asyncSupported"))) {
 			ssoProperties.setAsyncSupported(Boolean.valueOf(filterConfig.getInitParameter("asyncSupported")));
 		}
-		
+
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("autoRemoveWebappFromServer"))) {
 			ssoProperties.setAutoRemoveWebappFromServer(Boolean.valueOf(filterConfig.getInitParameter("autoRemoveWebappFromServer")));
+		}
+
+		if (StringUtils.isNotBlank(filterConfig.getInitParameter("cookieName"))) {
+			ssoProperties.setCookieName(String.valueOf(filterConfig.getInitParameter("cookieName")));
 		}
 
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("cookieHttpOnly"))) {
@@ -80,8 +84,8 @@ public final class SsoUtil {
 			ssoProperties.setCookieSecure(Boolean.valueOf(filterConfig.getInitParameter("cookieSecure")));
 		}
 
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("tgcMaxAgeSeconds"))) {
-			ssoProperties.setTgcMaxAgeSeconds(Integer.valueOf(filterConfig.getInitParameter("tgcMaxAgeSeconds")));
+		if (StringUtils.isNotBlank(filterConfig.getInitParameter("tgtMaxAgeSeconds"))) {
+			ssoProperties.setTgtMaxAgeSeconds(Integer.valueOf(filterConfig.getInitParameter("tgtMaxAgeSeconds")));
 		}
 
 		if (StringUtils.isNotBlank(filterConfig.getInitParameter("ignoreUrls"))) {
@@ -201,7 +205,7 @@ public final class SsoUtil {
 			LOGGER.error("decrypt error", e);
 			return new SsoResult(520, "client webapp request key rk decrypt error:"+SsoException.getRootCauseMsg(e));
 		}
-		
+
 		JSONObject json = new JSONObject();
 		json.put("rk", rk);
 		json.put("st", st);
@@ -316,7 +320,7 @@ public final class SsoUtil {
 
 		return newToken;
 	}
-	
+
 	/**
 	 * 获取角色列表
 	 * @param ssoProperties
@@ -338,7 +342,7 @@ public final class SsoUtil {
 		}
 
 		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/list");
-		
+
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
 		if (StringUtils.isNotBlank(keyword)) {
@@ -384,7 +388,7 @@ public final class SsoUtil {
 		}
 
 	}
-	
+
 	/**
 	 * 查询全部角色
 	 * @param ssoProperties
@@ -399,7 +403,7 @@ public final class SsoUtil {
 		}
 
 		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/all");
-		
+
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
 
@@ -490,7 +494,7 @@ public final class SsoUtil {
 
 		return loginUser;
 	}
-	
+
 	/***
 	 * 从存储中获取token
 	 * @param req 请求
@@ -536,6 +540,10 @@ public final class SsoUtil {
 		return lang;
 	}
 
+	public static void saveLoginUser(HttpServletRequest req, String user) {
+		req.getSession().setAttribute(ConstSso.SESSION_LOGIN_USER, user);
+	}
+
 	/***
 	 * 存储token
 	 * @param req 请求
@@ -543,6 +551,7 @@ public final class SsoUtil {
 	 * @param ssoProperties sso配置
 	 * @param token
 	 */
+	@Deprecated
 	public static void saveTGC(HttpServletRequest req, HttpServletResponse res, 
 			SsoProperties ssoProperties, String token) {
 
@@ -579,7 +588,7 @@ public final class SsoUtil {
 		Cookie cookie = new Cookie(key, value);
 		cookie.setPath("/");
 		cookie.setDomain(req.getServerName());
-		cookie.setMaxAge(ssoProperties.getTgcMaxAgeSeconds());
+		cookie.setMaxAge(req.getSession().getMaxInactiveInterval());
 		cookie.setHttpOnly(ssoProperties.isCookieHttpOnly());
 		cookie.setSecure(ssoProperties.isCookieSecure());
 		CookieUtil.addCookie(res, cookie);
@@ -587,16 +596,29 @@ public final class SsoUtil {
 
 	/**
 	 * 隐藏截取
-	 * @param token
+	 * @param ticket
 	 * @return
 	 */
-	public static String hiddenToken(String token) {
-		if (token!=null) {
-			token = token.substring(0, ConstSso.LOGIN_TOKEN_LENGTH)+"******";
-		}
-		return token;
+	public static String hiddenTicket(String ticket) {
+		return hiddenTicket(ticket, ConstSso.HIDDEN_REMAIN);
 	}
-	
+
+	/**
+	 * 隐藏截取
+	 * @param ticket
+	 * @param remain
+	 * @return
+	 */
+	public static String hiddenTicket(String ticket, int remain) {
+		if (ticket!=null) {
+			if (ticket.length()<=remain) {
+				return ticket;
+			}
+			ticket = ConstSso.HIDDEN_CODE+ticket.substring(ticket.length()-remain);
+		}
+		return ticket;
+	}
+
 	/**
 	 * 存储session属性
 	 * @param session
@@ -612,7 +634,7 @@ public final class SsoUtil {
 		}
 		session.setAttribute(name, value);
 	};
-	
+
 	/**
 	 * 获取session属性
 	 * @param session
@@ -623,11 +645,11 @@ public final class SsoUtil {
 		if (session==null || StringUtils.isBlank(name)) {
 			return null;
 		}
-		
+
 		if (StringUtils.isNotBlank(serviceId)) {
 			name = String.format("%s.%s", serviceId, name);
 		}
-		
+
 		return session.getAttribute(name);
 	};
 

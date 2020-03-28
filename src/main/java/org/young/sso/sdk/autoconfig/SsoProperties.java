@@ -60,9 +60,14 @@ public class SsoProperties {
 	private int stMaxAgeSeconds = 10;
 	
 	/**
-	 * TGC最大有效时间(秒，默认1min=60s)
+	 * TGT最大有效时间(秒，默认8h=8*60*60)
 	 */
-	private int tgcMaxAgeSeconds = 1*60;
+	private int tgtMaxAgeSeconds = 8*60*60;
+	
+	/**
+	 * SessionId cookie name
+	 */
+	private String cookieName;
 	
 	/**
 	 * HttpOnly（默认false）
@@ -98,7 +103,6 @@ public class SsoProperties {
 		this.outerEdpauthSrever = outerEdpauthSrever;
 		this.webappServer = webappServer;
 	}
-
 
 	public boolean isEnabled() {
 		return enabled;
@@ -180,12 +184,20 @@ public class SsoProperties {
 		this.stMaxAgeSeconds = stMaxAgeSeconds;
 	}
 
-	public int getTgcMaxAgeSeconds() {
-		return tgcMaxAgeSeconds;
+	public int getTgtMaxAgeSeconds() {
+		return tgtMaxAgeSeconds;
 	}
 
-	public void setTgcMaxAgeSeconds(int tgcMaxAgeSeconds) {
-		this.tgcMaxAgeSeconds = tgcMaxAgeSeconds;
+	public void setTgtMaxAgeSeconds(int tgtMaxAgeSeconds) {
+		this.tgtMaxAgeSeconds = tgtMaxAgeSeconds;
+	}
+
+	public String getCookieName() {
+		return cookieName;
+	}
+
+	public void setCookieName(String cookieName) {
+		this.cookieName = cookieName;
 	}
 
 	public boolean isCookieHttpOnly() {
