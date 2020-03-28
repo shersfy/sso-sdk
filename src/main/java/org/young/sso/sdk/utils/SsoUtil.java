@@ -168,6 +168,23 @@ public final class SsoUtil {
 		LOGGER.info("redirect to {}", loginPath);
 		res.sendRedirect(loginPath);
 	}
+	
+	/**
+	 * 重定向到退出
+	 * @param req
+	 * @param res
+	 * @param ssoProperties
+	 * @throws IOException
+	 */
+	public static void redirectLogout(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
+		
+		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
+		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
+		loginPath = HttpUtil.concatUrl(loginPath, ConstSso.SIGN_OUT[0]);
+		// 重定向到登出
+		LOGGER.info("redirect to {}", loginPath);
+		res.sendRedirect(loginPath);
+	}
 
 	/**
 	 * 重定向到SSO服务器错误页面

@@ -76,7 +76,7 @@ public class WebSignoutFilter implements Filter {
 		// webapp get 请求
 		if (StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever()) 
 				&& "get".equalsIgnoreCase(req.getMethod())) {
-			SsoUtil.redirectLogin(req, res, ssoProperties);
+			SsoUtil.redirectLogout(req, res, ssoProperties);
 			return;
 		}
 		
