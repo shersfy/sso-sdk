@@ -23,13 +23,13 @@ import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.utils.SsoUtil;
 
 public class WebSignoutFilter implements Filter {
-	
+
 	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-	
+
 	private SsoProperties ssoProperties;
-	
+
 	private SessionSharedListener sessionSharedListener;
-	
+
 	/**
 	 * 配置SSO相关属性，将会在WebSignoutFilter.init()中被调用
 	 * @return
@@ -41,13 +41,13 @@ public class WebSignoutFilter implements Filter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
-		
+
 		ssoProperties = resetSsoProperties();
 		ssoProperties = ssoProperties==null?SsoUtil.initSso(filterConfig):ssoProperties;
-		
+
 		String className = ssoProperties.getSessionSharedListener();
 		className = StringUtils.isBlank(className)?MemorySessionShared.class.getName():className;
-		
+
 		Class<? extends SessionSharedListener> clazz = null;
 		try {
 			clazz = (Class<? extends SessionSharedListener>) Class.forName(className);
@@ -57,7 +57,7 @@ public class WebSignoutFilter implements Filter {
 		} catch (Exception e) {
 			throw new ServletException(e);
 		}
-		
+
 	}
 
 	@Override
@@ -67,50 +67,27 @@ public class WebSignoutFilter implements Filter {
 			chain.doFilter(request, response);
 			return;
 		}
-		
 
 		HttpServletRequest req  = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		LOGGER.debug("method:{}, port:{}, url:{}", req.getMethod(), req.getServerPort(), req.getRequestURL());
-		
+
 		// webapp get 请求
 		if (StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever()) 
 				&& "get".equalsIgnoreCase(req.getMethod())) {
+			destroyWebappSession(req, res);
 			SsoUtil.redirectLogout(req, res, ssoProperties);
 			return;
 		}
-		
-		// 销毁session
-		String sessionId = null;
-		try {
-			// server执行
-			if (StringUtils.isBlank(ssoProperties.getOuterEdpauthSrever())) {
-				sessionId = req.getSession().getId();
-				// 退出已登录的APP
-				if (!ssoProperties.isAutoRemoveWebappFromServer()) {
-					sessionSharedListener.removeWebapps(sessionId);
-				}
-				// 销毁session
-				SsoUtil.invalidateSession(req.getSession());
-				
-				SsoUtil.redirectLogin(req, res, ssoProperties);
-				return;
-			}
-			// webapp执行，不能直接销毁session，需要根据session id找到对应的session销毁
-			sessionId = req.getParameter(ConstSso.LOGIN_SESSION_ID);
-			// 广播发布指令执行销毁session
-			sessionSharedListener.publishInvalidateSession(sessionId);
-			LOGGER.debug("sessionId=getParameter('{}')", sessionId);
-			
-			SsoResult succ = new SsoResult(sessionId);
-			succ.setMsg("sign out successful");
-			succ.setModel(sessionId);
-			
-			res.setContentType(ContentType.APPLICATION_JSON.toString());
-			res.getWriter().write(succ.toString());
-		} finally {
-			LOGGER.info("sign out successful. session={}", sessionId);
+
+		// server执行
+		if (StringUtils.isBlank(ssoProperties.getOuterEdpauthSrever())) {
+			destroyServerSession(req, res);
+			SsoUtil.redirectLogin(req, res, ssoProperties);
+			return;
 		}
+
+		destroyWebappSession(req, res);
 	}
 
 	@Override
@@ -121,5 +98,37 @@ public class WebSignoutFilter implements Filter {
 	public void setSessionSharedListener(SessionSharedListener sessionSharedListener) {
 		this.sessionSharedListener = sessionSharedListener;
 	}
-	
+
+	private void destroyServerSession(HttpServletRequest req, HttpServletResponse res) {
+		String sessionId = req.getSession().getId();
+		// 退出已登录的APP
+		if (!ssoProperties.isAutoRemoveWebappFromServer()) {
+			sessionSharedListener.removeWebapps(sessionId);
+		}
+		// 销毁session
+		SsoUtil.invalidateSession(req.getSession());
+
+		LOGGER.info("sign out successful. session={}", sessionId);
+	}
+
+	private void destroyWebappSession(HttpServletRequest req, HttpServletResponse res) throws IOException {
+		String sessionId = req.getParameter(ConstSso.LOGIN_SESSION_ID);
+		// webapp执行，不能直接销毁session，需要根据session id找到对应的session销毁
+		if (StringUtils.isBlank(sessionId)) {
+			sessionId = req.getSession().getId();
+		}
+		// 广播发布指令执行销毁session
+		sessionSharedListener.publishInvalidateSession(sessionId);
+		LOGGER.debug("sessionId=getParameter('{}')", sessionId);
+
+		SsoResult succ = new SsoResult(sessionId);
+		succ.setMsg("sign out successful");
+		succ.setModel(sessionId);
+
+		res.setContentType(ContentType.APPLICATION_JSON.toString());
+		res.getWriter().write(succ.toString());
+
+		LOGGER.info("sign out successful. session={}", sessionId);
+	}
+
 }

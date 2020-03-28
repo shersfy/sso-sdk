@@ -129,7 +129,7 @@ public class WebSigninFilter implements Filter {
 			String loginUser = JSON.toJSONString(validate.getModel());
 			SsoUtil.saveLoginUser(req, loginUser);
 			sessionSharedListener.addSession(req.getSession());
-			LOGGER.info("webapp '{}' sign in successful. session={}, loginUser={}", 
+			LOGGER.info("sign in successful. webapp={}, session={}, loginUser={}", 
 					webapp, req.getSession().getId(), loginUser);
 			
 			LOGGER.info("redirect to {}", req.getRequestURL());
