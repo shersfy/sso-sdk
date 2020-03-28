@@ -1,12 +1,15 @@
 package org.young.sso.sdk.utils;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -46,61 +49,55 @@ public final class SsoUtil {
 	 * @throws ServletException
 	 */
 	public static SsoProperties initSso(FilterConfig filterConfig) throws ServletException {
-		String enabled        = filterConfig.getInitParameter("enabled");
-		String outerEdpauthSrever = filterConfig.getInitParameter("outerEdpauthSrever");
-		String innerEdpauthSrever = filterConfig.getInitParameter("innerEdpauthSrever");
-		String webappServer	  = filterConfig.getInitParameter("webappServer");
-
-		// webapp
-		if (StringUtils.isNotBlank(webappServer)) {
-			if (StringUtils.isBlank(innerEdpauthSrever)) {
-				innerEdpauthSrever = outerEdpauthSrever;
+		
+		SsoProperties prop = new SsoProperties();
+		// 设值
+		Map<String, Method> methods = new HashMap<>();
+		for (Method md :prop.getClass().getDeclaredMethods()) {
+			if (md.getName().startsWith("set")) {
+				methods.put(md.getName(), md);
 			}
 		}
-
-		SsoProperties ssoProperties = new SsoProperties(StringUtils.isBlank(enabled)?false:Boolean.valueOf(enabled), 
-				outerEdpauthSrever, webappServer);
-
-		ssoProperties.setInnerEdpauthSrever(innerEdpauthSrever);
-		ssoProperties.setWebappLogout(filterConfig.getInitParameter("webappLogout"));
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("asyncSupported"))) {
-			ssoProperties.setAsyncSupported(Boolean.valueOf(filterConfig.getInitParameter("asyncSupported")));
+		
+		Enumeration<String> names = filterConfig.getInitParameterNames();
+		while(names.hasMoreElements()) {
+			String name = names.nextElement();
+			String value = filterConfig.getInitParameter(name);
+			String setter = "set"+StringUtils.capitalize(name);
+			LOGGER.info("name={}, value={}", name, value);
+			if (value==null) {
+				continue;
+			}
+			try {
+				Method method = methods.get(setter);
+				Class<?> type = method.getParameters()[0].getType();
+				if (type==boolean.class || type==Boolean.class) {
+					method.invoke(prop, Boolean.valueOf(value));
+				}
+				else if (type==int.class || type==Integer.class) {
+					method.invoke(prop, Integer.valueOf(value));
+				}
+				else if (type==long.class || type==Long.class) {
+					method.invoke(prop, Long.valueOf(value));
+				}
+				else if (type==String[].class) {
+					method.invoke(prop, (Object)value.split(","));
+				}
+				else {
+					method.invoke(prop, value);
+				}
+				
+			} catch (Exception e) {
+				throw new ServletException(e);
+			}
+			
+		}
+		
+		if (StringUtils.isBlank(prop.getInnerEdpauthSrever())) {
+			prop.setInnerEdpauthSrever(prop.getOuterEdpauthSrever());
 		}
 
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("autoRemoveWebappFromServer"))) {
-			ssoProperties.setAutoRemoveWebappFromServer(Boolean.valueOf(filterConfig.getInitParameter("autoRemoveWebappFromServer")));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("cookieName"))) {
-			ssoProperties.setCookieName(String.valueOf(filterConfig.getInitParameter("cookieName")));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("cookieHttpOnly"))) {
-			ssoProperties.setCookieHttpOnly(Boolean.valueOf(filterConfig.getInitParameter("cookieHttpOnly")));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("cookieSecure"))) {
-			ssoProperties.setCookieSecure(Boolean.valueOf(filterConfig.getInitParameter("cookieSecure")));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("tgtMaxAgeSeconds"))) {
-			ssoProperties.setTgtMaxAgeSeconds(Integer.valueOf(filterConfig.getInitParameter("tgtMaxAgeSeconds")));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("ignoreUrls"))) {
-			ssoProperties.setIgnoreUrls(filterConfig.getInitParameter("ignoreUrls").split(","));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("ignoreResources"))) {
-			ssoProperties.setIgnoreResources(filterConfig.getInitParameter("ignoreResources").split(","));
-		}
-
-		if (StringUtils.isNotBlank(filterConfig.getInitParameter("sessionSharedListener"))) {
-			ssoProperties.setSessionSharedListener(filterConfig.getInitParameter("sessionSharedListener"));
-		}
-
-		return ssoProperties;
+		return prop;
 	}
 
 	/**
@@ -144,7 +141,14 @@ public final class SsoUtil {
 		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
 
 		String encodeUrl = req.getParameter("webapp");
-		encodeUrl = encodeUrl==null ?ssoProperties.getWebappServer() :encodeUrl;
+		if (encodeUrl==null) {
+			encodeUrl = ssoProperties.getWebappServer();
+			if (StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())) {
+				encodeUrl = req.getRequestURL().toString();
+			}
+		}
+		
+		encodeUrl = StringUtils.isBlank(encodeUrl) ?"" :encodeUrl;
 		encodeUrl = URLEncoder.encode(encodeUrl, "UTF-8");
 
 		loginPath = HttpUtil.concatUrl(loginPath, "/login");
@@ -161,6 +165,7 @@ public final class SsoUtil {
 		}
 
 		// 同步方式, 未登录重定向到登录页面
+		LOGGER.info("redirect to {}", loginPath);
 		res.sendRedirect(loginPath);
 	}
 
@@ -174,7 +179,7 @@ public final class SsoUtil {
 	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoProperties, SsoResult error) throws IOException {
 		String errorPath = HttpUtil.concatUrl(ssoProperties.getOuterEdpauthSrever(), "/error");
 		errorPath = errorPath+String.format("?code=%s&msg=%s", error.getCode(), URLEncoder.encode(error.getMsg(), "UTF-8"));
-		LOGGER.error("redirect '{}', error:{}", errorPath, error);
+		LOGGER.error("redirect to {}, error:{}", errorPath, error);
 		res.sendRedirect(errorPath);
 	}
 

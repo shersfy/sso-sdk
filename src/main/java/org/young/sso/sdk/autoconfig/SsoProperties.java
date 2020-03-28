@@ -5,7 +5,7 @@ import org.young.sso.sdk.listener.MemorySessionShared;
 
 @ConfigurationProperties(SsoProperties.PREFIX)
 public class SsoProperties {
-	
+
 	public static final String PREFIX ="sso";
 
 	/**
@@ -55,9 +55,14 @@ public class SsoProperties {
 	private String[] ignoreResources = {".js", ".css", ".png", ".ico", ".html"};
 	
 	/**
-	 * TGC最大有效时间(秒，默认10s)
+	 * ST最大有效时间(秒，默认10s)
 	 */
 	private int stMaxAgeSeconds = 10;
+	
+	/**
+	 * TGC最大有效时间(秒，默认2h=2*60*60)
+	 */
+	private int tgcMaxAgeSeconds = 2*60*60;
 	
 	/**
 	 * TGT最大有效时间(秒，默认8h=8*60*60)
@@ -67,21 +72,21 @@ public class SsoProperties {
 	/**
 	 * SessionId cookie name
 	 */
-	private String cookieName;
+	private String cookieName = "TGC";
 	
 	/**
 	 * HttpOnly（默认false）
 	 */
-	private boolean cookieHttpOnly;
+	private boolean cookieHttpOnly = true;
 	/**
 	 * 是否启用https（默认false）
 	 */
-	private boolean cookieSecure;
+	private boolean cookieSecure = true;
 	
 	/**
 	 * 启用安全加密
 	 */
-	private boolean enabledRsa;
+	private boolean enabledRsa = false;
 	
 	/***
 	 * 请求远端服务重试次数(默认5次)
@@ -182,6 +187,14 @@ public class SsoProperties {
 
 	public void setStMaxAgeSeconds(int stMaxAgeSeconds) {
 		this.stMaxAgeSeconds = stMaxAgeSeconds;
+	}
+
+	public int getTgcMaxAgeSeconds() {
+		return tgcMaxAgeSeconds;
+	}
+
+	public void setTgcMaxAgeSeconds(int tgcMaxAgeSeconds) {
+		this.tgcMaxAgeSeconds = tgcMaxAgeSeconds;
 	}
 
 	public int getTgtMaxAgeSeconds() {

@@ -1,10 +1,5 @@
 package org.young.sso.sdk.resource;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.young.sso.sdk.resource.BaseBean;
-
 public class LoginWebapp extends BaseBean {
 
 	private static final long serialVersionUID = 1L;
@@ -13,17 +8,23 @@ public class LoginWebapp extends BaseBean {
 	
 	private String applogout;
 	
-	private Set<String> sessions;
+	private String session;
 	
 	public LoginWebapp() {
 		super();
-		this.sessions = new HashSet<>();
 	}
 	
 	public LoginWebapp(String appserver, String applogout) {
-		this();
+		super();
 		this.appserver = appserver;
 		this.applogout = applogout;
+	}
+	
+	public LoginWebapp(String appserver, String applogout, String session) {
+		super();
+		this.appserver = appserver;
+		this.applogout = applogout;
+		this.session = session;
 	}
 
 	public String getAppserver() {
@@ -42,12 +43,13 @@ public class LoginWebapp extends BaseBean {
 		this.applogout = applogout;
 	}
 
-	public Set<String> getSessions() {
-		return sessions;
+	public String getSession() {
+		return session;
 	}
 
-	public void setSessions(Set<String> sessions) {
-		this.sessions = sessions;
+	public void setSession(String session) {
+		this.session = session;
 	}
+
 
 }

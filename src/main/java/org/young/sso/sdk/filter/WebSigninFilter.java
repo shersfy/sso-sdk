@@ -107,11 +107,12 @@ public class WebSigninFilter implements Filter {
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_REQUEST_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever());
 		if (isWebappLogin) {
-			if (StringUtils.isNotBlank(ssoProperties.getWebappServer())) {
+			if (StringUtils.isBlank(ssoProperties.getWebappServer())) {
 				throw new ServletException("client webappServer cannot be blank");
 			}
 			
 			if (isLogined(req, res)) {
+				LOGGER.info("redirect to {}", url);
 				res.sendRedirect(url);
 				return;
 			}
@@ -125,10 +126,13 @@ public class WebSigninFilter implements Filter {
 				return;
 			}
 			
-			SsoUtil.saveLoginUser(req, JSON.toJSONString(validate.getModel()));
+			String loginUser = JSON.toJSONString(validate.getModel());
+			SsoUtil.saveLoginUser(req, loginUser);
 			sessionSharedListener.addSession(req.getSession());
-			LOGGER.info("webapp '{}' sign in successful. session={}, TGC={}", 
-					webapp, req.getSession().getId(), SsoUtil.hiddenTicket(validate.getModel().toString()));
+			LOGGER.info("webapp '{}' sign in successful. session={}, loginUser={}", 
+					webapp, req.getSession().getId(), loginUser);
+			
+			LOGGER.info("redirect to {}", url);
 			res.sendRedirect(url);
 			return;
 		}
@@ -158,6 +162,7 @@ public class WebSigninFilter implements Filter {
 	 */
 	private boolean isLogined(HttpServletRequest req, HttpServletResponse res) {
 		
+		LOGGER.info("session={}", req.getSession().getId());
 		Object user = req.getSession().getAttribute(ConstSso.SESSION_LOGIN_USER);
 		if (user!=null) {
 			return true;

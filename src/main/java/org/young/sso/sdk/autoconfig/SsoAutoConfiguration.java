@@ -1,5 +1,7 @@
 package org.young.sso.sdk.autoconfig;
 
+import java.lang.reflect.Field;
+
 import javax.servlet.Filter;
 
 import org.apache.commons.lang.StringUtils;
@@ -16,16 +18,16 @@ import org.young.sso.sdk.listener.SsoListener;
 @Configuration
 @ConditionalOnProperty(prefix=SsoProperties.PREFIX, value="enabled", havingValue="true")
 public class SsoAutoConfiguration {
-	
+
 	@Bean
 	public FilterRegistrationBean<WebSigninFilter> ssoFilter(@Autowired SsoProperties config,
 			@Autowired(required=false) SsoListener listener,
-			@Autowired(required=false) SessionSharedListener sessionSharedListener){
-		
+			@Autowired(required=false) SessionSharedListener sessionSharedListener) throws Exception{
+
 		WebSigninFilter filter = new WebSigninFilter();
 		filter.setListener(listener);
 		filter.setSessionSharedListener(sessionSharedListener);
-		
+
 		FilterRegistrationBean<WebSigninFilter> bean = new FilterRegistrationBean<>();
 		bean.setOrder(1);
 		bean.setFilter(filter);
@@ -34,14 +36,14 @@ public class SsoAutoConfiguration {
 		addInitParameters(bean, config);
 		return bean;
 	}
-	
+
 	@Bean
 	public FilterRegistrationBean<WebSignoutFilter> signoutFilter(@Autowired SsoProperties config,
-			@Autowired(required=false) SessionSharedListener sessionSharedListener){
-		
+			@Autowired(required=false) SessionSharedListener sessionSharedListener) throws Exception{
+
 		WebSignoutFilter filter = new WebSignoutFilter();
 		filter.setSessionSharedListener(sessionSharedListener);
-		
+
 		FilterRegistrationBean<WebSignoutFilter> bean = new FilterRegistrationBean<>();
 		bean.setOrder(2);
 		bean.setFilter(filter);
@@ -50,23 +52,36 @@ public class SsoAutoConfiguration {
 		addInitParameters(bean, config);
 		return bean;
 	}
-	
-	private void addInitParameters(FilterRegistrationBean<? extends Filter> bean, SsoProperties config) {
-		bean.addInitParameter("enabled", String.valueOf(config.isEnabled()));
-		bean.addInitParameter("outerEdpauthSrever", config.getOuterEdpauthSrever());
-		bean.addInitParameter("innerEdpauthSrever", config.getInnerEdpauthSrever());
-		bean.addInitParameter("webappServer", config.getWebappServer());
-		bean.addInitParameter("webappLogout", config.getWebappLogout());
-		
-		bean.addInitParameter("enabledRsa", String.valueOf(config.isEnabledRsa()));
-		bean.addInitParameter("asyncSupported", String.valueOf(config.isAsyncSupported()));
-		bean.addInitParameter("autoRemoveWebappFromServer", String.valueOf(config.isAutoRemoveWebappFromServer()));
-		bean.addInitParameter("cookieName", String.valueOf(config.getCookieName()));
-		bean.addInitParameter("cookieHttpOnly", String.valueOf(config.isCookieHttpOnly()));
-		bean.addInitParameter("cookieSecure", String.valueOf(config.isCookieSecure()));
-		bean.addInitParameter("tgtMaxAgeSeconds", String.valueOf(config.getTgtMaxAgeSeconds()));
-		bean.addInitParameter("requestRemoteRetry", String.valueOf(config.getRequestRemoteRetry()));
-		bean.addInitParameter("ignoreUrls", StringUtils.join(config.getIgnoreUrls(), ","));
-		bean.addInitParameter("ignoreResources", StringUtils.join(config.getIgnoreResources(), ","));
+
+	private void addInitParameters(FilterRegistrationBean<? extends Filter> bean, SsoProperties config) throws Exception {
+
+		Field[] fields = config.getClass().getDeclaredFields();
+		for (Field fd :fields) {
+			if ("PREFIX".equals(fd.getName())) {
+				continue;
+			}
+
+			boolean flg = fd.isAccessible();
+			if (!flg) {
+				fd.setAccessible(true);
+			}
+
+			String name = fd.getName();
+			Object value = fd.get(config);
+			if (value==null) {
+				continue;
+			}
+			if (value instanceof String) {
+				bean.addInitParameter(name, value.toString());
+			}
+			else if (value instanceof String[]) {
+				bean.addInitParameter(name, StringUtils.join((String[])value, ","));
+				continue;
+			}
+			else {
+				bean.addInitParameter(name, String.valueOf(value));	
+			}
+			fd.setAccessible(flg);
+		}
 	}
 }
