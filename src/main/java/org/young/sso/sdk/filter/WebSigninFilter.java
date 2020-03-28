@@ -79,7 +79,7 @@ public class WebSigninFilter implements Filter {
 			throw new ServletException(e);
 		}
 		
-		LOGGER.info("{} initialized, edpauth server is '{}', and listener is {}", 
+		LOGGER.info("{} initialized, sso server is '{}', and listener is {}", 
 				WebSigninFilter.class.getSimpleName(), ssoProperties.getOuterSrever(), listener.getClass().getSimpleName());
 	}
 	
@@ -102,7 +102,7 @@ public class WebSigninFilter implements Filter {
 		LOGGER.debug("== method:{}", req.getMethod());
 		LOGGER.debug("== port:{}", req.getServerPort());
 		LOGGER.debug("== url:{}", req.getRequestURL());
-		LOGGER.debug("== outerEdpauthSrever:{}", ssoProperties.getOuterSrever());
+		LOGGER.debug("== outerSrever:{}", ssoProperties.getOuterSrever());
 		LOGGER.debug("== ticket:{}", req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		
 		this.setBasePath(req);
@@ -146,8 +146,8 @@ public class WebSigninFilter implements Filter {
 
 		// 被忽略或已登录的请求通行
 		if (isLogined(req, res)) {
-			req.setAttribute(ConstSso.WEBAPP_SERVER, ssoProperties.getWebappServer());
-			req.setAttribute(ConstSso.EDPADMIN_SREVER, ssoProperties.getOuterSrever());
+			req.setAttribute(ConstSso.APP_SERVER, ssoProperties.getWebappServer());
+			req.setAttribute(ConstSso.SSO_SREVER, ssoProperties.getOuterSrever());
 			chain.doFilter(request, response);
 			return;
 		}

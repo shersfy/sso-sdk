@@ -6,9 +6,9 @@ public interface ConstSso {
 	String BASE_PATH = "basePath";
 	
 	/** 应用服务器 **/
-	String WEBAPP_SERVER   = "webappServer";
-	/** EDP服务器地址 **/
-	String EDPADMIN_SREVER = "edpadminSrever";
+	String APP_SERVER = "appServer";
+	/** SSO服务器地址 **/
+	String SSO_SREVER = "ssoSrever";
 	
 	/** 登录session **/
 	String LOGIN_SESSION_ID    = "_sid_";

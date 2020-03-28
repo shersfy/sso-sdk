@@ -63,7 +63,7 @@ public class WebSignoutFilter implements Filter {
 			throw new ServletException(e);
 		}
 		
-		LOGGER.info("{} initialized, edpauth server is '{}'", 
+		LOGGER.info("{} initialized, sso server is '{}'", 
 				WebSignoutFilter.class.getSimpleName(), ssoProperties.getOuterSrever());
 
 	}
@@ -78,7 +78,7 @@ public class WebSignoutFilter implements Filter {
 
 		HttpServletRequest req  = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
-		LOGGER.debug("method:{}, port:{}, url:{}", req.getMethod(), req.getServerPort(), req.getRequestURL());
+		LOGGER.info("method:{}, port:{}, url:{}", req.getMethod(), req.getServerPort(), req.getRequestURL());
 
 		// webapp get 请求
 		if (StringUtils.isNotBlank(ssoProperties.getOuterSrever()) 
