@@ -26,13 +26,13 @@ public class SsoProperties {
 	private boolean autoRemoveWebappFromServer = false;
 	
 	/**
-	 * EDP认证中心服务内部地址(默认空白)
+	 * SSO服务内部地址(默认空白)
 	 */
-	private String innerEdpauthSrever = "";
+	private String innerSrever = "";
 	/**
-	 * EDP认证中心服务内部地址(默认空白)
+	 * SSO服务外部地址(默认空白)
 	 */
-	private String outerEdpauthSrever = "";
+	private String outerSrever = "";
 	
 	/**
 	 * 客户端应用服务注册地址
@@ -94,7 +94,7 @@ public class SsoProperties {
 	private int requestRemoteRetry = 5;
 	
 	/**
-	 * session共享处理类，默认配置com.gouuse.edpglobal.sso.listener.MemorySessionShared
+	 * session共享处理类，默认配置org.young.sso.sdk.listener.MemorySessionShared
 	 */
 	private String sessionSharedListener = MemorySessionShared.class.getName();
 
@@ -102,10 +102,10 @@ public class SsoProperties {
 		super();
 	}
 	
-	public SsoProperties(boolean enabled, String outerEdpauthSrever, String webappServer) {
+	public SsoProperties(boolean enabled, String outerSsoSrever, String webappServer) {
 		super();
 		this.enabled = enabled;
-		this.outerEdpauthSrever = outerEdpauthSrever;
+		this.outerSrever = outerSsoSrever;
 		this.webappServer = webappServer;
 	}
 
@@ -133,20 +133,20 @@ public class SsoProperties {
 		this.autoRemoveWebappFromServer = autoRemoveWebappFromServer;
 	}
 
-	public String getInnerEdpauthSrever() {
-		return innerEdpauthSrever;
+	public String getInnerSrever() {
+		return innerSrever;
 	}
 
-	public void setInnerEdpauthSrever(String innerEdpauthSrever) {
-		this.innerEdpauthSrever = innerEdpauthSrever;
+	public void setInnerSrever(String innerSrever) {
+		this.innerSrever = innerSrever;
 	}
 
-	public String getOuterEdpauthSrever() {
-		return outerEdpauthSrever;
+	public String getOuterSrever() {
+		return outerSrever;
 	}
 
-	public void setOuterEdpauthSrever(String outerEdpauthSrever) {
-		this.outerEdpauthSrever = outerEdpauthSrever;
+	public void setOuterSrever(String outerSrever) {
+		this.outerSrever = outerSrever;
 	}
 
 	public String getWebappServer() {

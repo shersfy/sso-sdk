@@ -8,12 +8,14 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.young.sso.sdk.autoconfig.ConstSso;
 import org.young.sso.sdk.autoconfig.SsoProperties;
 import org.young.sso.sdk.listener.DefaultSsoListener;
@@ -32,14 +34,18 @@ import com.alibaba.fastjson.JSON;
  * @author pengy
  * @date 2018年11月8日
  */
+@WebFilter(filterName = "signinFilter", urlPatterns = "/*")
 public class WebSigninFilter implements Filter {
 
 	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
+	@Autowired
 	private SsoProperties ssoProperties;
 
+	@Autowired(required = false)
 	private SsoListener listener;
 	
+	@Autowired
 	private SessionSharedListener sessionSharedListener;
 	
 	public WebSigninFilter() {}
@@ -49,7 +55,7 @@ public class WebSigninFilter implements Filter {
 	 * @return
 	 */
 	public SsoProperties resetSsoProperties() {
-		return null;
+		return ssoProperties;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -73,8 +79,8 @@ public class WebSigninFilter implements Filter {
 			throw new ServletException(e);
 		}
 		
-		LOGGER.info("SSO filter has enabled, edpauth server is '{}', and listener is {}", 
-				ssoProperties.getOuterEdpauthSrever(), listener);
+		LOGGER.info("{} initialized, edpauth server is '{}', and listener is {}", 
+				WebSigninFilter.class.getSimpleName(), ssoProperties.getOuterSrever(), listener.getClass().getSimpleName());
 	}
 	
 
@@ -96,7 +102,7 @@ public class WebSigninFilter implements Filter {
 		LOGGER.debug("== method:{}", req.getMethod());
 		LOGGER.debug("== port:{}", req.getServerPort());
 		LOGGER.debug("== url:{}", req.getRequestURL());
-		LOGGER.debug("== outerEdpauthSrever:{}", ssoProperties.getOuterEdpauthSrever());
+		LOGGER.debug("== outerEdpauthSrever:{}", ssoProperties.getOuterSrever());
 		LOGGER.debug("== ticket:{}", req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		
 		this.setBasePath(req);
@@ -105,7 +111,7 @@ public class WebSigninFilter implements Filter {
 		// 登录系统重定向过来的请求
 		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_REQUEST_KEY));
-		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever());
+		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterSrever());
 		if (isWebappLogin) {
 			if (StringUtils.isBlank(ssoProperties.getWebappServer())) {
 				throw new ServletException("client webappServer cannot be blank");
@@ -141,7 +147,7 @@ public class WebSigninFilter implements Filter {
 		// 被忽略或已登录的请求通行
 		if (isLogined(req, res)) {
 			req.setAttribute(ConstSso.WEBAPP_SERVER, ssoProperties.getWebappServer());
-			req.setAttribute(ConstSso.EDPADMIN_SREVER, ssoProperties.getOuterEdpauthSrever());
+			req.setAttribute(ConstSso.EDPADMIN_SREVER, ssoProperties.getOuterSrever());
 			chain.doFilter(request, response);
 			return;
 		}

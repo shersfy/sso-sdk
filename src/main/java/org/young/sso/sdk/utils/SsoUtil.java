@@ -93,8 +93,8 @@ public final class SsoUtil {
 			
 		}
 		
-		if (StringUtils.isBlank(prop.getInnerEdpauthSrever())) {
-			prop.setInnerEdpauthSrever(prop.getOuterEdpauthSrever());
+		if (StringUtils.isBlank(prop.getInnerSrever())) {
+			prop.setInnerSrever(prop.getOuterSrever());
 		}
 
 		return prop;
@@ -138,12 +138,12 @@ public final class SsoUtil {
 	public static void redirectLogin(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
 
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
-		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
+		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterSrever())?ssoProperties.getOuterSrever():basePath;
 
 		String encodeUrl = req.getParameter("webapp");
 		if (encodeUrl==null) {
 			encodeUrl = ssoProperties.getWebappServer();
-			if (StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())) {
+			if (StringUtils.isNotBlank(ssoProperties.getOuterSrever())) {
 				encodeUrl = req.getRequestURL().toString();
 			}
 		}
@@ -179,7 +179,7 @@ public final class SsoUtil {
 	public static void redirectLogout(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
 		
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
-		String logoutPath = StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever())?ssoProperties.getOuterEdpauthSrever():basePath;
+		String logoutPath = StringUtils.isNotBlank(ssoProperties.getOuterSrever())?ssoProperties.getOuterSrever():basePath;
 		logoutPath = HttpUtil.concatUrl(logoutPath, ConstSso.SIGN_OUT[0]);
 		// 重定向到登出
 		LOGGER.info("redirect to {}", logoutPath);
@@ -194,7 +194,7 @@ public final class SsoUtil {
 	 * @throws IOException
 	 */
 	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoProperties, SsoResult error) throws IOException {
-		String errorPath = HttpUtil.concatUrl(ssoProperties.getOuterEdpauthSrever(), "/error");
+		String errorPath = HttpUtil.concatUrl(ssoProperties.getOuterSrever(), "/error");
 		errorPath = errorPath+String.format("?code=%s&msg=%s", error.getCode(), URLEncoder.encode(error.getMsg(), "UTF-8"));
 		LOGGER.error("redirect to {}, error:{}", errorPath, error);
 		res.sendRedirect(errorPath);
@@ -213,7 +213,7 @@ public final class SsoUtil {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "Access SSO server retry timeout");
 		}
 
-		String url = ssoProperties.getInnerEdpauthSrever();
+		String url = ssoProperties.getInnerSrever();
 		url = url.endsWith("/")?url.substring(0, url.length()-1):url;
 		url = url+"/login/validate";
 
@@ -293,7 +293,7 @@ public final class SsoUtil {
 			return null;
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/login/renew");
+		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/login/renew");
 		JSONObject json = new JSONObject();
 		json.put("t", oldToken);
 		json.put("webappServer", ssoProperties.getWebappServer());
@@ -363,7 +363,7 @@ public final class SsoUtil {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/list");
+		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/role/list");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
@@ -424,7 +424,7 @@ public final class SsoUtil {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/role/all");
+		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/role/all");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
@@ -479,7 +479,7 @@ public final class SsoUtil {
 			return null;
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerEdpauthSrever(), "/resource/webapp/user");
+		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/user");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));

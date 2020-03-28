@@ -8,6 +8,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -15,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.young.sso.sdk.autoconfig.ConstSso;
 import org.young.sso.sdk.autoconfig.SsoProperties;
 import org.young.sso.sdk.listener.MemorySessionShared;
@@ -22,12 +24,15 @@ import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.utils.SsoUtil;
 
+@WebFilter(filterName = "signoutFilter", urlPatterns = {"/sign/out", "/logout"})
 public class WebSignoutFilter implements Filter {
 
 	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
+	@Autowired
 	private SsoProperties ssoProperties;
 
+	@Autowired
 	private SessionSharedListener sessionSharedListener;
 
 	/**
@@ -35,7 +40,7 @@ public class WebSignoutFilter implements Filter {
 	 * @return
 	 */
 	public SsoProperties resetSsoProperties() {
-		return null;
+		return ssoProperties;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -57,6 +62,9 @@ public class WebSignoutFilter implements Filter {
 		} catch (Exception e) {
 			throw new ServletException(e);
 		}
+		
+		LOGGER.info("{} initialized, edpauth server is '{}'", 
+				WebSignoutFilter.class.getSimpleName(), ssoProperties.getOuterSrever());
 
 	}
 
@@ -73,7 +81,7 @@ public class WebSignoutFilter implements Filter {
 		LOGGER.debug("method:{}, port:{}, url:{}", req.getMethod(), req.getServerPort(), req.getRequestURL());
 
 		// webapp get 请求
-		if (StringUtils.isNotBlank(ssoProperties.getOuterEdpauthSrever()) 
+		if (StringUtils.isNotBlank(ssoProperties.getOuterSrever()) 
 				&& "get".equalsIgnoreCase(req.getMethod())) {
 			destroyWebappSession(req, res);
 			SsoUtil.redirectLogout(req, res, ssoProperties);
@@ -81,7 +89,7 @@ public class WebSignoutFilter implements Filter {
 		}
 
 		// server执行
-		if (StringUtils.isBlank(ssoProperties.getOuterEdpauthSrever())) {
+		if (StringUtils.isBlank(ssoProperties.getOuterSrever())) {
 			destroyServerSession(req, res);
 			SsoUtil.redirectLogin(req, res, ssoProperties);
 			return;
