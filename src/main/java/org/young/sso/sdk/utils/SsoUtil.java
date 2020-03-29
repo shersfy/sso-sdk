@@ -132,18 +132,18 @@ public final class SsoUtil {
 	 * 重定向到登录页面
 	 * @param req
 	 * @param res
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @throws IOException
 	 */
-	public static void redirectLogin(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
+	public static void redirectLogin(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoconf) throws IOException {
 
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
-		String loginPath = StringUtils.isNotBlank(ssoProperties.getOuterSrever())?ssoProperties.getOuterSrever():basePath;
+		String loginPath = StringUtils.isNotBlank(ssoconf.getOuterSrever())?ssoconf.getOuterSrever():basePath;
 
 		String encodeUrl = req.getParameter("webapp");
 		if (encodeUrl==null) {
-			encodeUrl = ssoProperties.getWebappServer();
-			if (StringUtils.isNotBlank(ssoProperties.getOuterSrever())) {
+			encodeUrl = ssoconf.getWebappServer();
+			if (StringUtils.isNotBlank(ssoconf.getOuterSrever())) {
 				encodeUrl = req.getRequestURL().toString();
 			}
 		}
@@ -155,7 +155,7 @@ public final class SsoUtil {
 		loginPath = loginPath+(StringUtils.isNotBlank(encodeUrl)?"?webapp="+encodeUrl:"");
 
 		// 异步方式, 未登录返回状态-1
-		if (ssoProperties.isAsyncSupported() || SsoUtil.isAjaxRequest(req)) {
+		if (ssoconf.isAsyncSupported() || SsoUtil.isAjaxRequest(req)) {
 			SsoResult result = new SsoResult(loginPath);
 			result.setCode(ResultCode.NOT_LOGIN);
 			result.setMsg("not login");
@@ -173,13 +173,13 @@ public final class SsoUtil {
 	 * 重定向到退出
 	 * @param req
 	 * @param res
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @throws IOException
 	 */
-	public static void redirectLogout(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoProperties) throws IOException {
+	public static void redirectLogout(HttpServletRequest req, HttpServletResponse res, SsoProperties ssoconf) throws IOException {
 		
 		String basePath  = req.getAttribute(ConstSso.BASE_PATH).toString();
-		String logoutPath = StringUtils.isNotBlank(ssoProperties.getOuterSrever())?ssoProperties.getOuterSrever():basePath;
+		String logoutPath = StringUtils.isNotBlank(ssoconf.getOuterSrever())?ssoconf.getOuterSrever():basePath;
 		logoutPath = HttpUtil.concatUrl(logoutPath, ConstSso.SIGN_OUT[0]);
 		// 重定向到登出
 		LOGGER.info("redirect to {}", logoutPath);
@@ -189,12 +189,12 @@ public final class SsoUtil {
 	/**
 	 * 重定向到SSO服务器错误页面
 	 * @param res
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @param error
 	 * @throws IOException
 	 */
-	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoProperties, SsoResult error) throws IOException {
-		String errorPath = HttpUtil.concatUrl(ssoProperties.getOuterSrever(), "/error");
+	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoconf, SsoResult error) throws IOException {
+		String errorPath = HttpUtil.concatUrl(ssoconf.getOuterSrever(), "/error");
 		errorPath = errorPath+String.format("?code=%s&msg=%s", error.getCode(), URLEncoder.encode(error.getMsg(), "UTF-8"));
 		LOGGER.error("redirect to {}, error:{}", errorPath, error);
 		res.sendRedirect(errorPath);
@@ -204,23 +204,23 @@ public final class SsoUtil {
 	 * 校验ST有效性
 	 * @param req 请求
 	 * @param res 响应
-	 * @param ssoProperties sso配置
+	 * @param ssoconf sso配置
 	 * @param token
 	 */
-	public static SsoResult requestValidate(HttpServletRequest req, SsoProperties ssoProperties, int retry) {
+	public static SsoResult requestValidate(HttpServletRequest req, SsoProperties ssoconf, int retry) {
 
 		if (retry<=0) {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "Access SSO server retry timeout");
 		}
 
-		String url = ssoProperties.getInnerSrever();
+		String url = ssoconf.getInnerSrever();
 		url = url.endsWith("/")?url.substring(0, url.length()-1):url;
 		url = url+"/login/validate";
 
 		String st = req.getParameter(ConstSso.LOGIN_TICKET_KEY);
 		String rk = req.getParameter(ConstSso.LOGIN_REQUEST_KEY);
 		try {
-			String apphost = new URL(ssoProperties.getWebappServer()).getHost();
+			String apphost = new URL(ssoconf.getWebappServer()).getHost();
 			rk = rk.split("-")[1];
 			rk = SsoAESUtil.decryptHexStr(rk, apphost);
 		} catch (Exception e) {
@@ -232,11 +232,11 @@ public final class SsoUtil {
 		json.put("rk", rk);
 		json.put("st", st);
 		json.put("webappSession", req.getSession().getId());
-		json.put("webappServer", ssoProperties.getWebappServer());
+		json.put("webappServer", ssoconf.getWebappServer());
 		json.put("webappLogout", ConstSso.SIGN_OUT[0]);
 
 		String data = json.toString();
-		if (ssoProperties.isEnabledRsa()) {
+		if (ssoconf.isEnabledRsa()) {
 			try {
 				data = new String(SsoRSAUtil.encrypt(data.getBytes()));
 			} catch (Exception e) {
@@ -264,7 +264,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestValidate(req, ssoProperties, retry-1);
+			return requestValidate(req, ssoconf, retry-1);
 		}
 
 		try {
@@ -281,26 +281,26 @@ public final class SsoUtil {
 
 	/**
 	 * 刷新token
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @param oldToken 
 	 * @param remoteAddr
 	 * @param retry
 	 * @return
 	 */
-	public static String requestRenewToken(SsoProperties ssoProperties, String oldToken, String remoteAddr, int retry) {
+	public static String requestRenewToken(SsoProperties ssoconf, String oldToken, String remoteAddr, int retry) {
 
 		if (retry<=0) {
 			return null;
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/login/renew");
+		String url = HttpUtil.concatUrl(ssoconf.getInnerSrever(), "/login/renew");
 		JSONObject json = new JSONObject();
 		json.put("t", oldToken);
-		json.put("webappServer", ssoProperties.getWebappServer());
+		json.put("webappServer", ssoconf.getWebappServer());
 		json.put("remoteAddr", remoteAddr);
 
 		String data = json.toString();
-		if (ssoProperties.isEnabledRsa()) {
+		if (ssoconf.isEnabledRsa()) {
 			try {
 				data = new String(SsoRSAUtil.encrypt(data.getBytes()));
 			} catch (Exception e) {
@@ -325,7 +325,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestRenewToken(ssoProperties, oldToken, remoteAddr, retry-1);
+			return requestRenewToken(ssoconf, oldToken, remoteAddr, retry-1);
 		}
 
 		String newToken = null;
@@ -345,7 +345,7 @@ public final class SsoUtil {
 
 	/**
 	 * 获取角色列表
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @param retry
 	 * @param token
 	 * @param keyword
@@ -355,7 +355,7 @@ public final class SsoUtil {
 	 * @param pageSize
 	 * @return
 	 */
-	public static SsoResult requestRoleList(SsoProperties ssoProperties, int retry,
+	public static SsoResult requestRoleList(SsoProperties ssoconf, int retry,
 			String token, String keyword, Boolean editable, Boolean disabled,
 			Integer pageNo, Integer pageSize) {
 
@@ -363,7 +363,7 @@ public final class SsoUtil {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/role/list");
+		String url = HttpUtil.concatUrl(ssoconf.getInnerSrever(), "/resource/webapp/role/list");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
@@ -396,7 +396,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestRoleList(ssoProperties, retry-1, token, keyword, editable, disabled, pageNo, pageSize);
+			return requestRoleList(ssoconf, retry-1, token, keyword, editable, disabled, pageNo, pageSize);
 		}
 
 		try {
@@ -413,18 +413,18 @@ public final class SsoUtil {
 
 	/**
 	 * 查询全部角色
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @param retry
 	 * @param token
 	 * @return
 	 */
-	public static SsoResult requestRoleAll(SsoProperties ssoProperties, int retry, String token) {
+	public static SsoResult requestRoleAll(SsoProperties ssoconf, int retry, String token) {
 
 		if (retry<=0) {
 			return new SsoResult(SsoResult.ResultCode.FAIL, "数据加载失败");
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/role/all");
+		String url = HttpUtil.concatUrl(ssoconf.getInnerSrever(), "/resource/webapp/role/all");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
@@ -442,7 +442,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestRoleAll(ssoProperties, retry-1, token);
+			return requestRoleAll(ssoconf, retry-1, token);
 		}
 
 		try {
@@ -460,26 +460,26 @@ public final class SsoUtil {
 	/***
 	 * 获取登录用户信息
 	 * @param request  请求对象
-	 * @param ssoProperties SSO配置
+	 * @param ssoconf SSO配置
 	 * @return 登录用户
 	 */
-	public static LoginUser requestLoginUser(SsoProperties ssoProperties, String token) {
-		return requestLoginUser(ssoProperties, token, ssoProperties.getRequestRemoteRetry());
+	public static LoginUser requestLoginUser(SsoProperties ssoconf, String token) {
+		return requestLoginUser(ssoconf, token, ssoconf.getRequestRemoteRetry());
 	}
 
 	/***
 	 * 获取登录用户信息
 	 * @param request  请求对象
-	 * @param ssoProperties SSO配置
+	 * @param ssoconf SSO配置
 	 * @param retry 重试次数
 	 * @return 登录用户
 	 */
-	public static LoginUser requestLoginUser(SsoProperties ssoProperties, String token, int retry) {
+	public static LoginUser requestLoginUser(SsoProperties ssoconf, String token, int retry) {
 		if (StringUtils.isBlank(token) || retry<=0) {
 			return null;
 		}
 
-		String url = HttpUtil.concatUrl(ssoProperties.getInnerSrever(), "/resource/webapp/user");
+		String url = HttpUtil.concatUrl(ssoconf.getInnerSrever(), "/resource/webapp/user");
 
 		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("t", token));
@@ -497,7 +497,7 @@ public final class SsoUtil {
 			} catch (Exception e) {
 				LOGGER.error("", e);
 			}
-			return requestLoginUser(ssoProperties, token, retry-1);
+			return requestLoginUser(ssoconf, token, retry-1);
 		}
 
 		LoginUser loginUser = null;
@@ -570,14 +570,14 @@ public final class SsoUtil {
 	 * 存储token
 	 * @param req 请求
 	 * @param res 响应
-	 * @param ssoProperties sso配置
+	 * @param ssoconf sso配置
 	 * @param token
 	 */
 	@Deprecated
 	public static void saveTGC(HttpServletRequest req, HttpServletResponse res, 
-			SsoProperties ssoProperties, String token) {
+			SsoProperties ssoconf, String token) {
 
-		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_TICKET_KEY, token);
+		saveCookie(req, res, ssoconf, ConstSso.LOGIN_TICKET_KEY, token);
 		req.getSession().setAttribute(ConstSso.LOGIN_TICKET_KEY, token);
 
 	}
@@ -586,12 +586,12 @@ public final class SsoUtil {
 	 * 存储语言
 	 * @param req
 	 * @param res
-	 * @param ssoProperties
+	 * @param ssoconf
 	 * @param lang
 	 */
 	public static void saveLanguage(HttpServletRequest req, HttpServletResponse res, 
-			SsoProperties ssoProperties, String lang) {
-		saveCookie(req, res, ssoProperties, ConstSso.LOGIN_LANGUAGE, lang);
+			SsoProperties ssoconf, String lang) {
+		saveCookie(req, res, ssoconf, ConstSso.LOGIN_LANGUAGE, lang);
 		req.getSession().setAttribute(ConstSso.LOGIN_LANGUAGE, lang);
 	}
 
@@ -600,19 +600,23 @@ public final class SsoUtil {
 	 * 存储cookie
 	 * @param req 请求
 	 * @param res 响应
-	 * @param ssoProperties sso配置
+	 * @param ssoconf sso配置
 	 * @param key
 	 * @param value
 	 */
 	private static void saveCookie(HttpServletRequest req, HttpServletResponse res, 
-			SsoProperties ssoProperties, String key, String value) {
+			SsoProperties ssoconf, String key, String value) {
 
 		Cookie cookie = new Cookie(key, value);
 		cookie.setPath("/");
-		cookie.setDomain(req.getServerName());
+		if (StringUtils.isNotBlank(ssoconf.getCookie().getDomain())) {
+			cookie.setDomain(ssoconf.getCookie().getDomain());
+		} else {
+			cookie.setDomain(req.getServerName());
+		}
 		cookie.setMaxAge(req.getSession().getMaxInactiveInterval());
-		cookie.setHttpOnly(ssoProperties.isCookieHttpOnly());
-		cookie.setSecure(ssoProperties.isCookieSecure());
+		cookie.setHttpOnly(ssoconf.getCookie().isHttpOnly());
+		cookie.setSecure(ssoconf.getCookie().isSecure());
 		CookieUtil.addCookie(res, cookie);
 	}
 

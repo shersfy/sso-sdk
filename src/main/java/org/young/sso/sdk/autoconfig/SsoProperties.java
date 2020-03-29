@@ -70,18 +70,9 @@ public class SsoProperties {
 	private int tgtMaxAgeSeconds = 8*60*60;
 	
 	/**
-	 * SessionId cookie name
+	 *  客户端cookie
 	 */
-	private String cookieName = "TGC";
-	
-	/**
-	 * HttpOnly（默认false）
-	 */
-	private boolean cookieHttpOnly = true;
-	/**
-	 * 是否启用https（默认false）
-	 */
-	private boolean cookieSecure = true;
+	private CookieProperties cookie;
 	
 	/**
 	 * 启用安全加密
@@ -205,28 +196,12 @@ public class SsoProperties {
 		this.tgtMaxAgeSeconds = tgtMaxAgeSeconds;
 	}
 
-	public String getCookieName() {
-		return cookieName;
+	public CookieProperties getCookie() {
+		return cookie;
 	}
 
-	public void setCookieName(String cookieName) {
-		this.cookieName = cookieName;
-	}
-
-	public boolean isCookieHttpOnly() {
-		return cookieHttpOnly;
-	}
-
-	public void setCookieHttpOnly(boolean cookieHttpOnly) {
-		this.cookieHttpOnly = cookieHttpOnly;
-	}
-
-	public boolean isCookieSecure() {
-		return cookieSecure;
-	}
-
-	public void setCookieSecure(boolean cookieSecure) {
-		this.cookieSecure = cookieSecure;
+	public void setCookie(CookieProperties cookie) {
+		this.cookie = cookie;
 	}
 
 	public boolean isEnabledRsa() {
