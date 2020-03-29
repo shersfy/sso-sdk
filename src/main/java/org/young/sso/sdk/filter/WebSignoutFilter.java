@@ -30,7 +30,7 @@ public class WebSignoutFilter implements Filter {
 	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	@Autowired
-	private SsoProperties ssoProperties;
+	private SsoProperties ssoconf;
 
 	@Autowired(required = false)
 	private SessionSharedListener sessionSharedListener;
@@ -40,17 +40,17 @@ public class WebSignoutFilter implements Filter {
 	 * @return
 	 */
 	public SsoProperties resetSsoProperties() {
-		return ssoProperties;
+		return ssoconf;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
 
-		ssoProperties = resetSsoProperties();
-		ssoProperties = ssoProperties==null?SsoUtil.initSso(filterConfig):ssoProperties;
+		ssoconf = resetSsoProperties();
+		ssoconf = ssoconf==null?SsoUtil.initSso(filterConfig):ssoconf;
 
-		String className = ssoProperties.getSessionSharedListener();
+		String className = ssoconf.getSessionSharedListener();
 		className = StringUtils.isBlank(className)?MemorySessionShared.class.getName():className;
 
 		Class<? extends SessionSharedListener> clazz = null;
@@ -64,14 +64,14 @@ public class WebSignoutFilter implements Filter {
 		}
 		
 		LOGGER.info("{} initialized, sso server is '{}'", 
-				WebSignoutFilter.class.getSimpleName(), ssoProperties.getOuterSrever());
+				WebSignoutFilter.class.getSimpleName(), ssoconf.getOuterSrever());
 
 	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		if (!ssoProperties.isEnabled()) {
+		if (!ssoconf.isEnabled()) {
 			chain.doFilter(request, response);
 			return;
 		}
@@ -81,17 +81,17 @@ public class WebSignoutFilter implements Filter {
 		LOGGER.info("method:{}, port:{}, url:{}", req.getMethod(), req.getServerPort(), req.getRequestURL());
 
 		// webapp get 请求
-		if (StringUtils.isNotBlank(ssoProperties.getOuterSrever()) 
+		if (StringUtils.isNotBlank(ssoconf.getOuterSrever()) 
 				&& "get".equalsIgnoreCase(req.getMethod())) {
 			destroyWebappSession(req, res);
-			SsoUtil.redirectLogout(req, res, ssoProperties);
+			SsoUtil.redirectLogout(req, res, ssoconf);
 			return;
 		}
 
 		// server执行
-		if (StringUtils.isBlank(ssoProperties.getOuterSrever())) {
+		if (StringUtils.isBlank(ssoconf.getOuterSrever())) {
 			destroyServerSession(req, res);
-			SsoUtil.redirectLogin(req, res, ssoProperties);
+			SsoUtil.redirectLogin(req, res, ssoconf);
 			return;
 		}
 
@@ -110,7 +110,7 @@ public class WebSignoutFilter implements Filter {
 	private void destroyServerSession(HttpServletRequest req, HttpServletResponse res) {
 		String sessionId = req.getSession().getId();
 		// 退出已登录的APP
-		if (!ssoProperties.isAutoRemoveWebappFromServer()) {
+		if (!ssoconf.isAutoRemoveWebappFromServer()) {
 			sessionSharedListener.removeWebapps(sessionId);
 		}
 		// 销毁session

@@ -40,7 +40,7 @@ public class WebSigninFilter implements Filter {
 	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	@Autowired
-	private SsoProperties ssoProperties;
+	private SsoProperties ssoconf;
 
 	@Autowired(required = false)
 	private SsoListener listener;
@@ -55,18 +55,18 @@ public class WebSigninFilter implements Filter {
 	 * @return
 	 */
 	public SsoProperties resetSsoProperties() {
-		return ssoProperties;
+		return ssoconf;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
-		ssoProperties = resetSsoProperties();
-		ssoProperties = ssoProperties==null?SsoUtil.initSso(filterConfig):ssoProperties;
+		ssoconf = resetSsoProperties();
+		ssoconf = ssoconf==null?SsoUtil.initSso(filterConfig):ssoconf;
 		
-		listener = listener==null ?new DefaultSsoListener(ssoProperties) :listener;
+		listener = listener==null ?new DefaultSsoListener(ssoconf) :listener;
 		
-		String className = ssoProperties.getSessionSharedListener();
+		String className = ssoconf.getSessionSharedListener();
 		className = StringUtils.isBlank(className)?MemorySessionShared.class.getName():className;
 		
 		Class<? extends SessionSharedListener> clazz = null;
@@ -80,7 +80,7 @@ public class WebSigninFilter implements Filter {
 		}
 		
 		LOGGER.info("{} initialized, sso server is '{}', and listener is {}", 
-				WebSigninFilter.class.getSimpleName(), ssoProperties.getOuterSrever(), listener.getClass().getSimpleName());
+				WebSigninFilter.class.getSimpleName(), ssoconf.getOuterSrever(), listener.getClass().getSimpleName());
 	}
 	
 
@@ -102,7 +102,7 @@ public class WebSigninFilter implements Filter {
 		LOGGER.debug("== method:{}", req.getMethod());
 		LOGGER.debug("== port:{}", req.getServerPort());
 		LOGGER.debug("== url:{}", req.getRequestURL());
-		LOGGER.debug("== outerSrever:{}", ssoProperties.getOuterSrever());
+		LOGGER.debug("== outerSrever:{}", ssoconf.getOuterSrever());
 		LOGGER.debug("== ticket:{}", req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		
 		this.setBasePath(req);
@@ -111,9 +111,9 @@ public class WebSigninFilter implements Filter {
 		// 登录系统重定向过来的请求
 		boolean isWebappLogin = StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(req.getParameter(ConstSso.LOGIN_REQUEST_KEY));
-		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoProperties.getOuterSrever());
+		isWebappLogin = isWebappLogin && StringUtils.isNotBlank(ssoconf.getOuterSrever());
 		if (isWebappLogin) {
-			if (StringUtils.isBlank(ssoProperties.getWebappServer())) {
+			if (StringUtils.isBlank(ssoconf.getWebappServer())) {
 				throw new ServletException("client webappServer cannot be blank");
 			}
 			
@@ -124,11 +124,11 @@ public class WebSigninFilter implements Filter {
 			}
 			
 			// webapp 执行: 校验ST有效性
-			String webapp = ssoProperties.getWebappServer();
-			SsoResult validate = SsoUtil.requestValidate(req, ssoProperties, ssoProperties.getRequestRemoteRetry());
+			String webapp = ssoconf.getWebappServer();
+			SsoResult validate = SsoUtil.requestValidate(req, ssoconf, ssoconf.getRequestRemoteRetry());
 			if (validate.getCode()!=ResultCode.SUCESS) {
 				LOGGER.error("webapp '{}' validate failed", webapp);
-				SsoUtil.redirectServerError(res, ssoProperties, validate);
+				SsoUtil.redirectServerError(res, ssoconf, validate);
 				return;
 			}
 			
@@ -147,8 +147,8 @@ public class WebSigninFilter implements Filter {
 
 		// 被忽略或已登录的请求通行
 		if (isLogined(req, res)) {
-			req.setAttribute(ConstSso.APP_SERVER, ssoProperties.getWebappServer());
-			req.setAttribute(ConstSso.SSO_SREVER, ssoProperties.getOuterSrever());
+			req.setAttribute(ConstSso.APP_SERVER, ssoconf.getWebappServer());
+			req.setAttribute(ConstSso.SSO_SREVER, ssoconf.getOuterSrever());
 			chain.doFilter(request, response);
 			return;
 		}
@@ -159,7 +159,7 @@ public class WebSigninFilter implements Filter {
 		}
 
 		// 重定向到登录页面
-		SsoUtil.redirectLogin(req, res, ssoProperties);
+		SsoUtil.redirectLogin(req, res, ssoconf);
 	}
 
 	/***
@@ -178,7 +178,7 @@ public class WebSigninFilter implements Filter {
 	}
 
 	private boolean ignore(String url) {
-		for (String ignore :ssoProperties.getIgnoreUrls()) {
+		for (String ignore :ssoconf.getIgnoreUrls()) {
 			if (ignore.contains("*")) {
 				ignore = ignore.replace("*", "");
 				if ((url+"/").startsWith(ignore)) {
@@ -189,7 +189,7 @@ public class WebSigninFilter implements Filter {
 				return true;
 			}
 		}
-		for (String ignore :ssoProperties.getIgnoreResources()) {
+		for (String ignore :ssoconf.getIgnoreResources()) {
 			if (url.endsWith(ignore)) {
 				return true;
 			}
