@@ -45,7 +45,7 @@ public class WebSigninFilter implements Filter {
 	@Autowired(required = false)
 	private SsoListener listener;
 	
-	@Autowired
+	@Autowired(required = false)
 	private SessionSharedListener sessionSharedListener;
 	
 	public WebSigninFilter() {}
@@ -133,6 +133,7 @@ public class WebSigninFilter implements Filter {
 			}
 			
 			String loginUser = JSON.toJSONString(validate.getModel());
+			SsoUtil.invalidateSession(req.getSession());
 			SsoUtil.saveLoginUser(req, loginUser);
 			
 			sessionSharedListener.addSession(req.getSession());

@@ -32,7 +32,7 @@ public class WebSignoutFilter implements Filter {
 	@Autowired
 	private SsoProperties ssoProperties;
 
-	@Autowired
+	@Autowired(required = false)
 	private SessionSharedListener sessionSharedListener;
 
 	/**
