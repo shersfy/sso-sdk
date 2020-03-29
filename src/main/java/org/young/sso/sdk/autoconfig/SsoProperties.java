@@ -91,10 +91,11 @@ public class SsoProperties {
 
 	public SsoProperties() {
 		super();
+		this.cookie = new CookieProperties();
 	}
 	
 	public SsoProperties(boolean enabled, String outerSsoSrever, String webappServer) {
-		super();
+		this();
 		this.enabled = enabled;
 		this.outerSrever = outerSsoSrever;
 		this.webappServer = webappServer;
