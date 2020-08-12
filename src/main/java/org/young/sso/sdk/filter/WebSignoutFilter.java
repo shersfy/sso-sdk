@@ -17,6 +17,7 @@ import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.young.sso.sdk.autoconfig.ConstSso;
 import org.young.sso.sdk.autoconfig.SsoProperties;
 import org.young.sso.sdk.listener.MemorySessionShared;
@@ -24,6 +25,7 @@ import org.young.sso.sdk.listener.SessionSharedListener;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.utils.SsoUtil;
 
+@Order(2)
 @WebFilter(filterName = "signoutFilter", urlPatterns = {"/sign/out", "/logout"})
 public class WebSignoutFilter implements Filter {
 
