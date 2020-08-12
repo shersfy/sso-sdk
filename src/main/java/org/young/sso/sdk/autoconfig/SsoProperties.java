@@ -88,10 +88,16 @@ public class SsoProperties {
 	 * session共享处理类，默认配置org.young.sso.sdk.listener.MemorySessionShared
 	 */
 	private String sessionSharedListener = MemorySessionShared.class.getName();
+	
+	/**
+	 * 微信扫码登录配置
+	 */
+	private WeixinProperties weixin;
 
 	public SsoProperties() {
 		super();
 		this.cookie = new CookieProperties();
+		this.weixin = new WeixinProperties();
 	}
 	
 	public SsoProperties(boolean enabled, String outerSsoSrever, String webappServer) {
@@ -227,6 +233,14 @@ public class SsoProperties {
 
 	public void setSessionSharedListener(String sessionSharedListener) {
 		this.sessionSharedListener = sessionSharedListener;
+	}
+
+	public WeixinProperties getWeixin() {
+		return weixin;
+	}
+
+	public void setWeixin(WeixinProperties weixin) {
+		this.weixin = weixin;
 	}
 
 }

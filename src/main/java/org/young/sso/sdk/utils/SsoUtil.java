@@ -165,7 +165,7 @@ public final class SsoUtil {
 		}
 
 		// 同步方式, 未登录重定向到登录页面
-		LOGGER.info("redirect to {}", loginPath);
+		LOGGER.debug("redirect to {}", loginPath);
 		res.sendRedirect(loginPath);
 	}
 	
@@ -680,7 +680,7 @@ public final class SsoUtil {
 	}
 	
 	/**
-	 * 设置request.setAttribute("basePath", "");
+	 * 设置服务基础路径basePath
 	 * @param request
 	 */
 	public static void setBasePath(HttpServletRequest request) {
@@ -692,6 +692,14 @@ public final class SsoUtil {
 		}
 		basePath.append(request.getContextPath());
 		request.setAttribute(ConstSso.BASE_PATH, basePath.toString());
+	}
+	/**
+	 * 获取服务基础路径basePath
+	 * @param request
+	 */
+	public static String getBasePath(HttpServletRequest request) {
+		Object basePath = request.getAttribute(ConstSso.BASE_PATH);
+		return basePath==null ?null :basePath.toString();
 	}
 
 }

@@ -39,6 +39,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -46,6 +47,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.young.sso.sdk.resource.SsoResult.ResultCode;
 import org.young.sso.sdk.utils.HttpUtil.FormField.FormFieldType;
 
 import com.alibaba.fastjson.JSON;
@@ -190,6 +192,60 @@ public class HttpUtil {
 		Map<String, Object> params = new HashMap<>();
 		params.put("xml", xml);
 		return post(url, params, header);
+	}
+	
+	/**
+	 * POST Json数据
+	 * @param url
+	 * @param body
+	 * @param header
+	 * @return
+	 */
+	public static HttpResult postJson(String url, String body, Map<String, String> header) {
+		
+		HttpPost httpReq = new HttpPost(url);
+		
+		httpReq.addHeader("content-type", "application/json;charset=utf-8");
+		if (header != null) {
+			for (Map.Entry<String, String> entry : header.entrySet()) {
+				httpReq.addHeader(entry.getKey(), entry.getValue());
+			}
+		}
+		
+		HttpResult httpResult = new HttpResult();
+		CloseableHttpResponse httpResponse = null;
+		InputStream inputStream = null;
+		InputStream inputStreamEntity = null;
+		try {
+			// 不为空的时候设置参数
+			JSON.parseObject(body);
+			
+			inputStreamEntity = IOUtils.toInputStream(body);
+			InputStreamEntity entity = new InputStreamEntity(inputStreamEntity);
+			httpReq.setEntity(entity);
+			
+			httpResponse = httpClient.execute(httpReq);
+			if (httpResponse != null) {
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				httpResult.setCode(statusCode);
+				if (httpResponse.getEntity() != null) {
+					inputStream = httpResponse.getEntity().getContent();
+					httpResult.setBody(IOUtils.toString(inputStream));
+				}
+			}
+		} catch (Exception e) {
+			if(httpResult.getCode()==0){
+				httpResult.setCode(httpResponse!=null?httpResponse.getStatusLine().getStatusCode():ResultCode.FAIL);
+			}
+			httpResult.setBody(e.getMessage());
+			LOGGER.error(e.getMessage());
+		} finally {
+			IOUtils.closeQuietly(inputStream);
+			IOUtils.closeQuietly(inputStreamEntity);
+			IOUtils.closeQuietly(httpResponse);
+		}
+		
+		return httpResult;
 	}
 
 	public static HttpResult send(String url, String method, List<NameValuePair> params, Map<String, String> headerMap){
