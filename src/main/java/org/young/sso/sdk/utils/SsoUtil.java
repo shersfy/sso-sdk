@@ -659,7 +659,7 @@ public final class SsoUtil {
 			name = String.format("%s.%s", serviceId, name);
 		}
 		session.setAttribute(name, value);
-	};
+	}
 
 	/**
 	 * 获取session属性
@@ -677,6 +677,21 @@ public final class SsoUtil {
 		}
 
 		return session.getAttribute(name);
-	};
+	}
+	
+	/**
+	 * 设置request.setAttribute("basePath", "");
+	 * @param request
+	 */
+	public static void setBasePath(HttpServletRequest request) {
+		StringBuilder basePath = new StringBuilder(0);
+		basePath.append(request.getScheme()).append("://");
+		basePath.append(request.getServerName());
+		if(request.getServerPort() != 80 && request.getServerPort() != 443){
+			basePath.append(":").append(request.getServerPort());
+		}
+		basePath.append(request.getContextPath());
+		request.setAttribute(ConstSso.BASE_PATH, basePath.toString());
+	}
 
 }

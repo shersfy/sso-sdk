@@ -105,7 +105,7 @@ public class WebSigninFilter implements Filter {
 		LOGGER.debug("== outerSrever:{}", ssoconf.getOuterSrever());
 		LOGGER.debug("== ticket:{}", req.getParameter(ConstSso.LOGIN_TICKET_KEY));
 		
-		this.setBasePath(req);
+		SsoUtil.setBasePath(req);
 		String url = req.getRequestURI();
 		
 		// 登录系统重定向过来的请求
@@ -196,18 +196,6 @@ public class WebSigninFilter implements Filter {
 		}
 		return false;
 	}
-
-	private void setBasePath(HttpServletRequest request) {
-		StringBuilder basePath = new StringBuilder(0);
-		basePath.append(request.getScheme()).append("://");
-		basePath.append(request.getServerName());
-		if(request.getServerPort() != 80 && request.getServerPort() != 443){
-			basePath.append(":").append(request.getServerPort());
-		}
-		basePath.append(request.getContextPath());
-		request.setAttribute(ConstSso.BASE_PATH, basePath.toString());
-	}
-
 
 	public void setListener(SsoListener listener) {
 		this.listener = listener;
