@@ -1,5 +1,6 @@
 package org.young.sso.sdk.security;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.util.Map;
 
@@ -12,8 +13,10 @@ import com.alibaba.fastjson.JSON;
  * @author Young
  * @date 2020-08-14
  */
-public class SsoPrincipal implements Principal {
+public class SsoPrincipal implements Principal, Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * 会话ID
 	 */

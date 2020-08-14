@@ -188,6 +188,7 @@ public class WebSigninFilter implements Filter {
 			return false;
 		}
 		
+		credentials.reletPrincipal(req, ssoconf.getTgcMaxAgeSeconds());
 		return true;
 	}
 
