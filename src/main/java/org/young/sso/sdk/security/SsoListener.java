@@ -1,4 +1,4 @@
-package org.young.sso.sdk.listener;
+package org.young.sso.sdk.security;
 
 /**
  * 刷新token

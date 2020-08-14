@@ -1,4 +1,4 @@
-package org.young.sso.sdk.autoconfig;
+package org.young.sso.sdk.autoprop;
 
 import java.net.URLEncoder;
 import java.text.MessageFormat;

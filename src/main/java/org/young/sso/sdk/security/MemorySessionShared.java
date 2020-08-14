@@ -1,8 +1,9 @@
-package org.young.sso.sdk.listener;
+package org.young.sso.sdk.security;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.young.sso.sdk.utils.SsoUtil;
 
 /**
- * 缓存登录有效session
+ * 缓存登录有效的session
  * @author pengy
  * @date 2018年12月4日
  */
@@ -38,12 +39,15 @@ public class MemorySessionShared implements SessionSharedListener {
 	}
 	
 	@Override
-	public void addSession(HttpSession session) {
-		if (session==null) {
+	public void addSession(HttpServletRequest req) {
+		if (req==null) {
 			return;
 		}
+		
+		HttpSession session = req.getSession();
 		cacheSessions.put(session.getId(), session);
 	}
+	
 
 	@Override
 	public void sessionDestroyed(HttpSessionEvent event) {

@@ -1,6 +1,6 @@
-package org.young.sso.sdk.listener;
+package org.young.sso.sdk.security;
 
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
@@ -35,9 +35,9 @@ public interface SessionSharedListener extends HttpSessionListener{
 	
 	/**
 	 * 添加session到共享存储
-	 * @param session
+	 * @param req 请求对象
 	 */
-	default void addSession(HttpSession session) {}
+	default void addSession(HttpServletRequest req) {}
 	
 	
 	@Override

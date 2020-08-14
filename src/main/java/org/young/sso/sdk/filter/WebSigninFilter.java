@@ -17,13 +17,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.young.sso.sdk.autoconfig.ConstSso;
-import org.young.sso.sdk.autoconfig.SsoProperties;
-import org.young.sso.sdk.listener.DefaultSsoListener;
-import org.young.sso.sdk.listener.MemorySessionShared;
-import org.young.sso.sdk.listener.SessionSharedListener;
-import org.young.sso.sdk.listener.SsoListener;
+import org.young.sso.sdk.autoprop.SsoProperties;
+import org.young.sso.sdk.resource.ClientAuthModel;
+import org.young.sso.sdk.resource.LoginUser;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.resource.SsoResult.ResultCode;
+import org.young.sso.sdk.security.DefaultSsoListener;
+import org.young.sso.sdk.security.MemorySessionShared;
+import org.young.sso.sdk.security.SessionSharedListener;
+import org.young.sso.sdk.security.SsoCredentials;
+import org.young.sso.sdk.security.SsoCredentialsAuth2;
+import org.young.sso.sdk.security.SsoCredentialsSession;
+import org.young.sso.sdk.security.SsoListener;
+import org.young.sso.sdk.security.SsoPrincipal;
 import org.young.sso.sdk.utils.SsoUtil;
 
 import com.alibaba.fastjson.JSON;
@@ -47,6 +53,9 @@ public class WebSigninFilter implements Filter {
 	
 	@Autowired(required = false)
 	private SessionSharedListener sessionSharedListener;
+	
+	@Autowired(required = false)
+	private SsoCredentials credentials;
 	
 	public WebSigninFilter() {}
 	
@@ -79,10 +88,12 @@ public class WebSigninFilter implements Filter {
 			throw new ServletException(e);
 		}
 		
+		credentials = credentials==null? getDefaultCredentials():credentials;
+		SsoUtil.registerFilter(this);
+		
 		LOGGER.info("{} initialized, sso server is '{}', and listener is {}", 
 				WebSigninFilter.class.getSimpleName(), ssoconf.getOuterSrever(), listener.getClass().getSimpleName());
 	}
-	
 
 	/**
 	 * 不需要覆写
@@ -119,7 +130,7 @@ public class WebSigninFilter implements Filter {
 			
 			if (isLogined(req, res)) {
 				LOGGER.info("redirect to {}", req.getRequestURL());
-				res.sendRedirect(url);
+				SsoUtil.redirectLogined(req, res, ssoconf, credentials.getUserPrincipal(req));
 				return;
 			}
 			
@@ -132,16 +143,19 @@ public class WebSigninFilter implements Filter {
 				return;
 			}
 			
-			String loginUser = JSON.toJSONString(validate.getModel());
+			// 存储校验通过的会话和登录用户信息
+			// 废弃旧session, 创建新session
 			SsoUtil.invalidateSession(req.getSession());
-			SsoUtil.saveLoginUser(req, loginUser);
+			sessionSharedListener.addSession(req);
 			
-			sessionSharedListener.addSession(req.getSession());
-			LOGGER.info("sign in successful. webapp={}, session={}, loginUser={}", 
-					webapp, req.getSession().getId(), loginUser);
+			LoginUser user = JSON.parseObject(JSON.toJSONString(validate.getModel()), LoginUser.class);
+			SsoPrincipal principal = credentials.setUserPrincipal(req, user);
 			
+			LOGGER.info("sign in successful. webapp={}, session={}, LoginUser={}", 
+					webapp, req.getSession().getId(), user.toString());
 			LOGGER.info("redirect to {}", req.getRequestURL());
-			res.sendRedirect(url);
+			
+			SsoUtil.redirectLogined(req, res, ssoconf, principal);
 			return;
 		}
 
@@ -170,11 +184,11 @@ public class WebSigninFilter implements Filter {
 	 */
 	private boolean isLogined(HttpServletRequest req, HttpServletResponse res) {
 		
-		Object user = req.getSession().getAttribute(ConstSso.SESSION_LOGIN_USER);
-		if (user!=null) {
-			return true;
+		if (credentials.getUserPrincipal(req)==null) {
+			return false;
 		}
-		return false;
+		
+		return true;
 	}
 
 	private boolean ignore(String url) {
@@ -206,6 +220,19 @@ public class WebSigninFilter implements Filter {
 
 	public void setSessionSharedListener(SessionSharedListener sessionSharedListener) {
 		this.sessionSharedListener = sessionSharedListener;
+	}
+	
+	private SsoCredentials getDefaultCredentials() {
+		
+		if (ClientAuthModel.auth2==ssoconf.getClient().getAuthModel()) {
+			return new SsoCredentialsAuth2();
+		}
+		
+		return new SsoCredentialsSession();
+	}
+
+	public SsoCredentials getCredentials() {
+		return credentials;
 	}
 
 }

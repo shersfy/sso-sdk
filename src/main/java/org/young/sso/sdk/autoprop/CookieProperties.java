@@ -1,4 +1,4 @@
-package org.young.sso.sdk.autoconfig;
+package org.young.sso.sdk.autoprop;
 
 public class CookieProperties {
 

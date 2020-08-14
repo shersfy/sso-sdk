@@ -1,7 +1,7 @@
-package org.young.sso.sdk.autoconfig;
+package org.young.sso.sdk.autoprop;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.young.sso.sdk.listener.MemorySessionShared;
+import org.young.sso.sdk.security.MemorySessionShared;
 
 @ConfigurationProperties(SsoProperties.PREFIX)
 public class SsoProperties {
@@ -93,11 +93,17 @@ public class SsoProperties {
 	 * 微信扫码登录配置
 	 */
 	private WeixinProperties weixin;
+	
+	/**
+	 * SSO 客户端配置
+	 */
+	private ClientProperties client;
 
 	public SsoProperties() {
 		super();
 		this.cookie = new CookieProperties();
 		this.weixin = new WeixinProperties();
+		this.client = new ClientProperties();
 	}
 	
 	public SsoProperties(boolean enabled, String outerSsoSrever, String webappServer) {
@@ -241,6 +247,14 @@ public class SsoProperties {
 
 	public void setWeixin(WeixinProperties weixin) {
 		this.weixin = weixin;
+	}
+
+	public ClientProperties getClient() {
+		return client;
+	}
+
+	public void setClient(ClientProperties client) {
+		this.client = client;
 	}
 
 }

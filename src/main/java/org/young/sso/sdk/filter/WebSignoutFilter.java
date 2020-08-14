@@ -18,10 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.young.sso.sdk.autoconfig.ConstSso;
-import org.young.sso.sdk.autoconfig.SsoProperties;
-import org.young.sso.sdk.listener.MemorySessionShared;
-import org.young.sso.sdk.listener.SessionSharedListener;
+import org.young.sso.sdk.autoprop.SsoProperties;
 import org.young.sso.sdk.resource.SsoResult;
+import org.young.sso.sdk.security.MemorySessionShared;
+import org.young.sso.sdk.security.SessionSharedListener;
 import org.young.sso.sdk.utils.SsoUtil;
 
 @WebFilter(filterName = "signoutFilter", urlPatterns = {"/sign/out", "/logout"})
@@ -63,6 +63,7 @@ public class WebSignoutFilter implements Filter {
 			throw new ServletException(e);
 		}
 		
+		SsoUtil.registerFilter(this);
 		LOGGER.info("{} initialized, sso server is '{}'", 
 				WebSignoutFilter.class.getSimpleName(), ssoconf.getOuterSrever());
 

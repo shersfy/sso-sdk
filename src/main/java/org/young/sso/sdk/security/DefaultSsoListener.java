@@ -1,8 +1,8 @@
-package org.young.sso.sdk.listener;
+package org.young.sso.sdk.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.young.sso.sdk.autoconfig.SsoProperties;
+import org.young.sso.sdk.autoprop.SsoProperties;
 import org.young.sso.sdk.utils.SsoUtil;
 
 /**

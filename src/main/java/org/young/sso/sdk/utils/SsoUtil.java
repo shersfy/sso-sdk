@@ -10,7 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import javax.servlet.Filter;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -26,11 +28,15 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.young.sso.sdk.autoconfig.ConstSso;
-import org.young.sso.sdk.autoconfig.SsoProperties;
+import org.young.sso.sdk.autoprop.SsoProperties;
 import org.young.sso.sdk.exception.SsoException;
+import org.young.sso.sdk.filter.WebSigninFilter;
+import org.young.sso.sdk.resource.ClientAuthModel;
 import org.young.sso.sdk.resource.LoginUser;
 import org.young.sso.sdk.resource.SsoResult;
 import org.young.sso.sdk.resource.SsoResult.ResultCode;
+import org.young.sso.sdk.security.SsoCredentials;
+import org.young.sso.sdk.security.SsoPrincipal;
 import org.young.sso.sdk.utils.HttpUtil.HttpResult;
 
 import com.alibaba.fastjson.JSON;
@@ -38,10 +44,21 @@ import com.alibaba.fastjson.JSONObject;
 
 public final class SsoUtil {
 
-	protected static final Logger LOGGER = LoggerFactory.getLogger(SsoUtil.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SsoUtil.class);
 
+	private static Map<Class<? extends Filter>, Filter> cacheFilters = new ConcurrentHashMap<>();
+	
 	private SsoUtil() {}
-
+	
+	public static void registerFilter(Filter filter) {
+		cacheFilters.put(filter.getClass(), filter);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T extends Filter> T getFilter(Class<T> filterType) {
+		return (T) cacheFilters.get(filterType);
+	}
+	
 	/**
 	 * 过滤器初始化Sso
 	 * @param filterConfig
@@ -194,10 +211,36 @@ public final class SsoUtil {
 	 * @throws IOException
 	 */
 	public static void redirectServerError(HttpServletResponse res, SsoProperties ssoconf, SsoResult error) throws IOException {
+		if (ssoconf.getClient().getAuthModel()==ClientAuthModel.auth2) {
+			res.setContentType(ContentType.APPLICATION_JSON.toString());
+			res.getWriter().write(error.toString());
+			return;
+		}
+		
 		String errorPath = HttpUtil.concatUrl(ssoconf.getOuterSrever(), "/error");
 		errorPath = errorPath+String.format("?code=%s&msg=%s", error.getCode(), URLEncoder.encode(error.getMsg(), "UTF-8"));
 		LOGGER.error("redirect to {}, error:{}", errorPath, error);
 		res.sendRedirect(errorPath);
+	}
+	
+	/**
+	 * 已登录重定向
+	 * @param req
+	 * @param res
+	 * @param ssoconf
+	 * @param principal 登录用户身份
+	 * @throws IOException
+	 */
+	public static void redirectLogined(HttpServletRequest req, HttpServletResponse res, 
+			SsoProperties ssoconf, SsoPrincipal principal) throws IOException {
+		String url = req.getRequestURI();
+		if (ClientAuthModel.auth2 == ssoconf.getClient().getAuthModel()) {
+			res.setContentType(ContentType.APPLICATION_JSON.toString());
+			res.getWriter().write(new SsoResult(principal).toString());
+			return;
+		}
+		
+		res.sendRedirect(url);
 	}
 
 	/***
@@ -562,8 +605,15 @@ public final class SsoUtil {
 		return lang;
 	}
 
-	public static void saveLoginUser(HttpServletRequest req, String user) {
-		req.getSession().setAttribute(ConstSso.SESSION_LOGIN_USER, user);
+	public static SsoPrincipal saveLoginUser(HttpServletRequest req, LoginUser user) {
+		SsoCredentials credentials = getCurrentCredentials();
+		return credentials.setUserPrincipal(req, user);
+	}
+	
+	public static LoginUser getLoginUser(HttpServletRequest req) {
+		SsoCredentials credentials = getCurrentCredentials();
+		SsoPrincipal principal = credentials.getUserPrincipal(req);
+		return principal==null?null:principal.getUser();
 	}
 
 	/***
@@ -700,6 +750,11 @@ public final class SsoUtil {
 	public static String getBasePath(HttpServletRequest request) {
 		Object basePath = request.getAttribute(ConstSso.BASE_PATH);
 		return basePath==null ?null :basePath.toString();
+	}
+	
+	public static SsoCredentials getCurrentCredentials() {
+		WebSigninFilter filter = getFilter(WebSigninFilter.class);
+		return filter==null?null:filter.getCredentials();
 	}
 
 }

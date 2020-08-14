@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Import;
+import org.young.sso.sdk.autoprop.SsoProperties;
 
 /***
  * 开启SSO单点登录功能
